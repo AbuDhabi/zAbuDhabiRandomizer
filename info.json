@@ -1,0 +1,17 @@
+{
+    "name": "zAbuDhabiRandomizer",
+    "version": "0.0.1",
+    "title": "AbuDhabi's Recipe Randomizer",
+    "author": "AbuDhabi",
+    "dependencies": [
+        "base >= 2.0.0",
+        "? elevated-rails",
+        "? space-age",
+        "? quality",
+        "? discovery_tree",
+        "! zEstateRandomizer",
+        "! ZRecipeRandomizer2"
+    ],
+    "description": "Randomizes recipes",
+    "factorio_version": "2.0"
+}
