@@ -28,7 +28,7 @@ for tech_name, tech_raw in pairs(data.raw.technology) do
             end
         end
     end
-    
+
     technologies_with_prerequisites[tech_name] = {
         prerequisites = tech_raw.prerequisites,
         recipes_unlocked = recipes_unlocked,
@@ -42,14 +42,36 @@ end
 --      recipes_unlocked: string array
 --      results_unlocked: string->string dictionary
 --      ingredients_used: string->string dictionary
-for _, tech_with_prereqs in pairs(technologies_with_prerequisites) do
+local technology_tree = table.deepcopy(technologies_with_prerequisites);
+for _, tech_with_prereqs in pairs(technology_tree) do
     local prerequisite_references = {}
     if tech_with_prereqs.prerequisites then
         for _, prereq_name in pairs(tech_with_prereqs.prerequisites) do
-            prerequisite_references[prereq_name] = technologies_with_prerequisites[prereq_name]
+            prerequisite_references[prereq_name] = technology_tree[prereq_name]
         end
         tech_with_prereqs.prerequisites = prerequisite_references
     end
 end
 
-util.logg(technologies_with_prerequisites)
+local raw_materials = {}; -- string array
+local all_results = {}; -- string->bool dictionary
+local all_ingredients = {}; -- string->bool dictionary
+for _, tech in pairs(technology_tree) do
+    for result_name, _ in pairs(tech.results_unlocked) do
+        all_results[result_name] = true
+    end
+    for ingredient_name, _ in pairs(tech.ingredients_used) do
+        all_ingredients[ingredient_name] = true
+    end
+end
+
+for ingredient_name, _ in pairs(all_ingredients) do
+    if not all_results[ingredient_name] then
+        raw_materials[ingredient_name] = true
+    end
+end
+
+--util.logg(technology_tree)
+util.logg(all_results)
+util.logg(all_ingredients)
+util.logg(raw_materials)
