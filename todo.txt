@@ -1,0 +1,32 @@
+-- TODO: Raw materials need work. Select the minable results, not the name of the patch.
+-- TODO: auto_barrel is false on fluids which can't be moved, if a fluid can't be barreled and production recipes have surface_conditions, don't mess with it
+-- TODO: Other fluids are not considered raw materials.
+--          barrel, mine, produce, surface conditions in crafting, 
+-- water     YES     YES    YES      NO      FINE movable
+-- steam     NO      NO     YES      NO      FINE because craftable anywhere? even in space you can do it
+-- crude     YES     YES    NO       --      FINE movable
+-- petro     YES     NO     YES      NO      FINE movable
+-- light     YES     NO     YES      NO      FINE movable
+-- heavy     YES     YES    YES      NO      FINE movable
+-- lube      YES     NO     YES      NO      FINE movable
+-- acid      YES     YES    YES      NO      FINE movable
+-- fuel      NO      NO     YES      YES     -- can only be crafted in 0g
+-- oxide     NO      NO     YES      YES     -- can only be crafted in 0g
+-- lava      NO      YES    NO       --      -- can't be moved
+-- iron      NO      NO     YES      NO      FINE because it can be crafted anywhere out of solids
+-- copper    NO      NO     YES      NO      FINE because it can be crafted anywhere out of solids
+-- holm      NO      NO     YES      NO      FINE i suppose
+-- electro   NO      NO     YES      NO      FINE but only because holmium solution is possible w/o conditions
+-- nh4oh     NO      YES    NO       --      --
+-- nh3       NO      NO     YES      NO      -- because ancestor can't be moved
+-- fluor     NO      YES    NO       --      -- can't be moved
+-- F-keto    YES     NO     YES      NO      FINE
+-- lith      NO      YES    NO       --      -- can't be moved
+-- plasma    NO      NO     YES      NO      FINE
+--- what's the pattern, kenneth?????
+--- if barrelable = good to go
+--- if not barrelable, but can be made without surface conditions = good to go
+--- if not barrelable, can't be made without surface conditions, then don't use it? but think about where it even can be used
+--- nauvis -> inner planets is fine
+--- inner planets -> aquilo is fine, if possible
+--- RULE: If it (is barrelable) or (producible with (only items) or (barrelable fluids) w/o (surface conditions))
