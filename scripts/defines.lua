@@ -6,4 +6,8 @@ F.ignored_recipe_subgroups = {
     ["empty-barrel"] = true
 };
 
+F.ignored_recipe_categories = {
+    ["parameters"] = true
+}
+
 return F;

@@ -27,7 +27,10 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
             if type(ingredient_raw_materials) == "table" then
                 for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
                     local already_counted = found_raw_materials[raw_material_name] or 0
-                    found_raw_materials[raw_material_name] = already_counted + (raw_material_amount * (amount_demanded / amount_produced))
+                    found_raw_materials[raw_material_name] = already_counted + raw_material_amount
+                 end
+                 for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
+                    found_raw_materials[raw_material_name] = raw_material_amount * (amount_demanded / amount_produced) -- Multiply only once.
                  end
             else
                 found_raw_materials[ingredient_raw_materials] = ingredient.amount * (amount_demanded / amount_produced)
@@ -43,6 +46,8 @@ function F.filter_out_ignored_recipes(data_raw_recipes)
     local filtered_recipes = {}
     for recipe_name, recipe_raw in pairs(data_raw_recipes) do
         if defines.ignored_recipe_subgroups[recipe_raw.subgroup] then
+            filtered_recipes[recipe_name] = nil
+        elseif defines.ignored_recipe_categories[recipe_raw.category] then
             filtered_recipes[recipe_name] = nil
         elseif recipe_raw.hidden == true then
             filtered_recipes[recipe_name] = nil
