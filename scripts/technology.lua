@@ -2,14 +2,14 @@ local util = require "scripts.utilities"
 
 local F = {};
 
-function F.build_tech_tree()
+function F.get_technology_table(data_raw_technology, data_raw_recipe)
     -- technologies_with_prerequisites : string->object dictionary
     --      prerequisites : string->bool dictionary
     --      recipes_unlocked: string->bool dictionary
     --      results_unlocked: string->string dictionary
     --      ingredients_used: string->string dictionary
     local technologies_with_prerequisites = {};
-    for tech_name, tech_raw in pairs(data.raw.technology) do
+    for tech_name, tech_raw in pairs(data_raw_technology) do
         local recipes_unlocked = {}
         local results_unlocked = {}
         local ingredients_used = {}
@@ -17,7 +17,7 @@ function F.build_tech_tree()
             for _, effect in pairs(tech_raw.effects) do
                 if effect.type == "unlock-recipe" then
                     recipes_unlocked[effect.recipe] = true
-                    local recipe = data.raw.recipe[effect.recipe]
+                    local recipe = data_raw_recipe[effect.recipe]
                     for _, result in pairs(recipe.results) do
                         results_unlocked[result.name] = result.type
                     end
