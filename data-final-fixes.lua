@@ -23,3 +23,8 @@ local technology_tree = tech.build_tech_tree();
 local pu_raw_mats = recipes.get_recipe_raw_materials(data.raw.recipe, "processing-unit")
 
 util.logg(pu_raw_mats)
+
+-- Recalculate all recycling recipes, as implemented by the developers.
+if mods["quality"] then
+    require("__quality__.data-updates")
+end
