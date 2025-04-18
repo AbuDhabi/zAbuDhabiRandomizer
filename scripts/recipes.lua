@@ -35,5 +35,19 @@ function F.get_recipe_raw_materials(data_raw_recipes, recipe_name, amount_demand
     end
 end
 
+function F.filter_out_ignored_recipes(data_raw_recipes)
+    local filtered_recipes = {}
+    for recipe_name, recipe_raw in pairs(data_raw_recipes) do
+        if defines.ignored_recipe_subgroups[recipe_raw.subgroup] then
+            filtered_recipes[recipe_name] = nil
+        elseif recipe_raw.hidden == true then
+            filtered_recipes[recipe_name] = nil
+        else
+            filtered_recipes[recipe_name] = table.deepcopy(recipe_raw)
+        end
+    end
+    return filtered_recipes
+end
+
 
 return F;
