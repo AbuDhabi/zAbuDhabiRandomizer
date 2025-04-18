@@ -7,6 +7,9 @@ function F.get_recipe_raw_materials(data_raw_recipes, recipe_name, amount_demand
     if found_recipe then
         local found_raw_materials = {};
         for _, ingredient in pairs(found_recipe.original.ingredients) do
+            if recipe_name == ingredient.name then
+                return recipe_name -- Recipe is a breeder, ie. produces something from itself. Need to avoid loop.
+            end
             local amount_produced = found_recipe.original.results[1].amount -- TODO: Will fail if there's more results sometimes.
             local ingredient_raw_materials = F.get_recipe_raw_materials(data_raw_recipes, ingredient.name, ingredient.amount)
             if type(ingredient_raw_materials) == "table" then
