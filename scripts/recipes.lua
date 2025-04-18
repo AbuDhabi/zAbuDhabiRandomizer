@@ -6,6 +6,9 @@ function F.get_recipe_raw_materials(data_raw_recipes, recipe_name, amount_demand
     local found_recipe = data_raw_recipes[recipe_name]
     if found_recipe then
         local found_raw_materials = {};
+        if found_recipe.original.ingredients == nil then
+            return {} -- No ingredients.
+        end
         for _, ingredient in pairs(found_recipe.original.ingredients) do
             if recipe_name == ingredient.name then
                 return recipe_name -- Recipe is a breeder, ie. produces something from itself. Need to avoid loop.
