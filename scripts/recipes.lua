@@ -3,7 +3,6 @@ local utilities = require "scripts.utilities"
 local F = {};
 
 function F.get_recipe_raw_materials(data_raw_recipes, recipe_name, amount_demanded)
-    utilities.logg("getting raw for " .. amount_demanded .. " " .. recipe_name)
     local found_recipe = data_raw_recipes[recipe_name]
     if found_recipe then
         local found_raw_materials = {};
@@ -12,12 +11,10 @@ function F.get_recipe_raw_materials(data_raw_recipes, recipe_name, amount_demand
             local ingredient_raw_materials = F.get_recipe_raw_materials(data_raw_recipes, ingredient.name, ingredient.amount)
             if type(ingredient_raw_materials) == "table" then
                 for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
-                    utilities.logg("table ingredient raw material name " .. raw_material_name .. " " .. raw_material_amount)
                     local already_counted = found_raw_materials[raw_material_name] or 0
-                    found_raw_materials[raw_material_name] = (already_counted + raw_material_amount) * (amount_demanded / amount_produced)
+                    found_raw_materials[raw_material_name] = already_counted + (raw_material_amount * (amount_demanded / amount_produced))
                  end
             else
-                utilities.logg("ingredients NOT a table: " .. ingredient_raw_materials .. " " .. ingredient.amount)
                 found_raw_materials[ingredient_raw_materials] = ingredient.amount * (amount_demanded / amount_produced)
             end
         end
