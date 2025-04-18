@@ -1,9 +1,11 @@
+local util = require "scripts.utilities"
+
 local F = {};
 
 function F.build_tech_tree()
     -- technologies_with_prerequisites : string->object dictionary
-    --      prerequisites : string array
-    --      recipes_unlocked: string array
+    --      prerequisites : string->bool dictionary
+    --      recipes_unlocked: string->bool dictionary
     --      results_unlocked: string->string dictionary
     --      ingredients_used: string->string dictionary
     local technologies_with_prerequisites = {};
@@ -14,7 +16,7 @@ function F.build_tech_tree()
         if tech_raw.effects then
             for _, effect in pairs(tech_raw.effects) do
                 if effect.type == "unlock-recipe" then
-                    table.insert(recipes_unlocked, effect.recipe)
+                    recipes_unlocked[effect.recipe] = true
                     local recipe = data.raw.recipe[effect.recipe]
                     for _, result in pairs(recipe.results) do
                         results_unlocked[result.name] = result.type
@@ -26,31 +28,39 @@ function F.build_tech_tree()
             end
         end
 
+        local prerequisites = {}
+        if tech_raw.prerequisites then
+            for _, prerequisite in pairs(tech_raw.prerequisites) do
+                prerequisites[prerequisite] = true
+            end
+        end
+
         technologies_with_prerequisites[tech_name] = {
-            prerequisites = tech_raw.prerequisites,
+            prerequisites = prerequisites,
             recipes_unlocked = recipes_unlocked,
             results_unlocked = results_unlocked,
             ingredients_used = ingredients_used
         }
     end
 
-    -- technologies_with_prerequisites : string->object dictionary
-    --      prerequisites : string->object dictionary
-    --      recipes_unlocked: string array
-    --      results_unlocked: string->string dictionary
-    --      ingredients_used: string->string dictionary
-    local technology_tree = table.deepcopy(technologies_with_prerequisites);
-    for _, tech_with_prereqs in pairs(technology_tree) do
-        local prerequisite_references = {}
-        if tech_with_prereqs.prerequisites then
-            for _, prereq_name in pairs(tech_with_prereqs.prerequisites) do
-                prerequisite_references[prereq_name] = technology_tree[prereq_name]
-            end
-            tech_with_prereqs.prerequisites = prerequisite_references
+    return technologies_with_prerequisites
+end
+
+function F.get_unlocked_recipes(technology_tree, technology_name)
+    local unlocked_recipes = {};
+    for unlocked_recipe_name, _ in pairs(technology_tree[technology_name].recipes_unlocked) do
+        unlocked_recipes[unlocked_recipe_name] = true
+    end
+
+    for prerequisite_name, _ in pairs(technology_tree[technology_name].prerequisites) do
+        local recipes_unlocked_by_prerequisites = F.get_unlocked_recipes(technology_tree, prerequisite_name)
+        for recipe_unlocked_by_prerequisite, _  in pairs(recipes_unlocked_by_prerequisites) do
+            unlocked_recipes[recipe_unlocked_by_prerequisite] = true
         end
     end
 
-    return technology_tree
+    return unlocked_recipes
 end
+
 
 return F
