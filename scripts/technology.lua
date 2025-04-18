@@ -62,5 +62,4 @@ function F.get_unlocked_recipes(technology_tree, technology_name)
     return unlocked_recipes
 end
 
-
 return F

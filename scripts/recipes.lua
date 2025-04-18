@@ -1,5 +1,6 @@
-local utilities = require "scripts.utilities"
+local util = require "scripts.utilities"
 local defines = require "scripts.defines"
+local tech = require "scripts.technology"
 
 local F = {};
 
@@ -71,6 +72,23 @@ function F.try_to_find_a_non_obvious_recipe(recipes, item_or_fluid_name)
         return production_recipe 
     end
     return nil
+end
+
+function F.get_enabled_recipes(recipes)
+    local starting_recipes = {};
+    for recipe_name, recipe in pairs(recipes) do
+        if (recipe.enabled == nil or recipe.enabled == true) then
+            starting_recipes[recipe_name] = true
+        end
+    end
+    return starting_recipes
+end
+
+function F.get_starting_and_unlocked_recipes(recipes, tech_tree, tech_name)
+    local starting_recipes = F.get_enabled_recipes(recipes)
+    local recipes_unlocked_by_tech = tech.get_unlocked_recipes(tech_tree, tech_name)
+    util.merge_tables(starting_recipes, recipes_unlocked_by_tech)
+    return starting_recipes
 end
 
 
