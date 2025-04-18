@@ -1,6 +1,5 @@
 local util = require "scripts.utilities"
 local tech = require "scripts.technology"
-local ingredients = require "scripts.ingredients"
 
 -- Get all technologies.
 -- Create an ancestor graph from them. The technology plus its ancestors.
@@ -19,6 +18,3 @@ for recipe_name, recipe_raw in pairs(data.raw.recipe) do
 end
 
 local technology_tree = tech.build_tech_tree();
-local initial_ingredients_available = ingredients.find_initially_available_ingredients(technology_tree);
-
-util.logg(initial_ingredients_available)
