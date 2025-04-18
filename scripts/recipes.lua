@@ -11,11 +11,11 @@ function F.get_recipe_raw_materials(data_raw_recipes, recipe_name)
             local ingredient_raw_materials = F.get_recipe_raw_materials(data_raw_recipes, ingredient.name)
             utilities.logg(ingredient_raw_materials)
             if type(ingredient_raw_materials) == "table" then
-                for _, raw_material_name in pairs(ingredient_raw_materials) do
-                    table.insert(found_raw_materials, raw_material_name)
+                for raw_material_name, _ in pairs(ingredient_raw_materials) do
+                    found_raw_materials[raw_material_name] = true
                  end
             else
-                table.insert(found_raw_materials, ingredient_raw_materials)
+                found_raw_materials[ingredient_raw_materials] = true
             end
         end
         return found_raw_materials
