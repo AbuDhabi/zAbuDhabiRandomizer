@@ -2,27 +2,19 @@ local util = require "scripts.utilities"
 local tech = require "scripts.technology"
 local recipes = require "scripts.recipes"
 
--- Get all technologies.
--- Create an ancestor graph from them. The technology plus its ancestors.
--- For each technology, randomize its recipe ingredients allowing stuff already unlocked in its ancestors and itself (except the item in question).
-
-
-local ignored_recipe_subgroups = {
-    ["fill-barrel"] = true,
-    ["empty-barrel"] = true
-};
-
 -- Save a copy of each recipe's original version in the game data.
 for recipe_name, recipe_raw in pairs(data.raw.recipe) do
     local copy = table.deepcopy(data.raw.recipe[recipe_name])
     data.raw.recipe[recipe_name].original = copy
 end
 
-local technology_tree = tech.build_tech_tree();
+for recipe_name, recipe_raw in pairs(data.raw.recipe) do
+    util.logg(recipe_name)
+    util.logg(recipes.get_recipe_raw_materials(data.raw.recipe, recipe_name, 1))
+end
 
-local pu_raw_mats = recipes.get_recipe_raw_materials(data.raw.recipe, "processing-unit")
 
-util.logg(pu_raw_mats)
+
 
 -- Recalculate all recycling recipes, as implemented by the developers.
 if mods["quality"] then
