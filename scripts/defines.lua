@@ -7,7 +7,8 @@ F.ignored_recipe_subgroups = {
 };
 
 F.ignored_recipe_categories = {
-    ["parameters"] = true
+    ["parameters"] = true,
+    ["smelting"] = true
 }
 
 return F;
