@@ -92,5 +92,22 @@ function F.get_starting_and_unlocked_recipes(recipes, tech_tree, tech_name)
     return starting_recipes
 end
 
+function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
+    local recipe = recipes[recipe_name];
+    if not recipe or not recipe.ingredients then
+        return false -- No recipe, raw material, end of the line.
+    end
+    for _, recipe_ingredient in pairs(recipe.ingredients) do
+        if recipe_ingredient.name == ingredient_name then
+            return true
+        else
+            if F.is_recipe_made_of_this(recipes, recipe_ingredient, ingredient_name) == true then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 
 return F;
