@@ -6,46 +6,6 @@ local random = require "scripts.random"
 
 local F = {};
 
-function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded)
-    local found_recipe = recipes[item_or_fluid_name] -- Naively try a recipe with the exact same name.
-    if found_recipe == nil and false then -- TODO: Currently this finds coal-synthesis and breaks.
-        found_recipe = F.try_to_find_a_non_obvious_recipe(recipes, item_or_fluid_name)
-    end
-    if found_recipe then
-        local found_raw_materials = {};
-        if found_recipe.ingredients == nil then
-            return {} -- No ingredients.
-        end
-        local amount_produced = 1;
-        for _, result in pairs(found_recipe.results) do
-            if result.name == found_recipe.name then
-                amount_produced = result.amount
-            end
-        end
-        for _, ingredient in pairs(found_recipe.ingredients) do
-            if item_or_fluid_name == ingredient.name then
-                return item_or_fluid_name -- Recipe is a breeder, ie. produces something from itself. Need to avoid loop.
-            end
-            local ingredient_raw_materials = F.get_recipe_raw_materials(recipes, ingredient.name, ingredient.amount)
-            if type(ingredient_raw_materials) == "table" then
-                for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
-                    local already_counted = found_raw_materials[raw_material_name] or 0
-                    found_raw_materials[raw_material_name] = already_counted + raw_material_amount
-                 end
-            else
-                found_raw_materials[ingredient_raw_materials] = ingredient.amount
-            end
-        end
-        -- Multiply by demanded-to-produced ratio.
-        for found_raw_material_name, found_raw_material_amount in pairs(found_raw_materials) do
-            found_raw_materials[found_raw_material_name] = found_raw_material_amount * (amount_demanded / amount_produced)
-        end
-        return found_raw_materials
-    else
-        return item_or_fluid_name -- Doesn't have a recipe, it's a raw material.
-    end
-end
-
 function F.filter_out_ignored_recipes(data_raw_recipes)
     local filtered_recipes = {}
     for recipe_name, recipe_raw in pairs(data_raw_recipes) do
@@ -62,6 +22,7 @@ function F.filter_out_ignored_recipes(data_raw_recipes)
     return filtered_recipes
 end
 
+-- TODO: Fix and use in raw material calculation, or remove.
 function F.try_to_find_a_non_obvious_recipe(recipes, item_or_fluid_name)
     local amount_of_recipes_producing_this = 0
     local production_recipe
@@ -115,7 +76,7 @@ function F.balance_costs(data_raw)
     for recipe_name, recipe_raw in pairs(data_raw.recipe) do
         if recipe_raw.modified then
             local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-            local updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            local updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
             local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
             local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores
     
@@ -135,7 +96,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -154,7 +115,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -174,7 +135,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -193,7 +154,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -207,11 +168,11 @@ end
 
 function F.randomize_recipe(data_raw, recipe_name, available_recipes, original_filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
-    local recipe_raw_materials = F.get_recipe_raw_materials(original_filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
+    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
     local candidates_for_replacements = {};
     for candidate_name, candidate in pairs(available_recipes) do
-        local candidate_raw_materials = F.get_recipe_raw_materials(original_filtered_recipes, candidate_name, 1)
+        local candidate_raw_materials = material.get_recipe_raw_materials(filtered_recipes, candidate_name, 1)
         local candidate_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
         -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
         if (candidate_scores.item < recipe_cost_scores.item or (candidate_scores.item == recipe_cost_scores.item and candidate_scores.item == 0)) and (candidate_scores.fluid < recipe_cost_scores.fluid or (candidate_scores.fluid == recipe_cost_scores.fluid and candidate_scores.fluid == 0)) then
