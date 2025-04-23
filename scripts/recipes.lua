@@ -2,6 +2,7 @@ local util = require "scripts.utilities"
 local defines = require "scripts.defines"
 local tech = require "scripts.technology"
 local material = require "scripts.raw_materials"
+local random = require "scripts.random"
 
 local F = {};
 
@@ -200,6 +201,78 @@ function F.balance_costs(data_raw)
                 end
             end
         end
+    end
+end
+
+
+function F.randomize_recipe(data_raw, recipe_name, available_recipes, original_filtered_recipes)
+    local raw_recipe = data_raw.recipe[recipe_name]
+    local recipe_raw_materials = F.get_recipe_raw_materials(original_filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
+    local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
+    local candidates_for_replacements = {};
+    for candidate_name, candidate in pairs(available_recipes) do
+        local candidate_raw_materials = F.get_recipe_raw_materials(original_filtered_recipes, candidate_name, 1)
+        local candidate_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
+        -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
+        if (candidate_scores.item < recipe_cost_scores.item or (candidate_scores.item == recipe_cost_scores.item and candidate_scores.item == 0)) and (candidate_scores.fluid < recipe_cost_scores.fluid or (candidate_scores.fluid == recipe_cost_scores.fluid and candidate_scores.fluid == 0)) then
+            -- And only if their raw material list is a subset of the raw material list of the recipe to be randomized.
+            if util.table_keys_subset(candidate_raw_materials, recipe_raw_materials) then
+                -- And if it's not the same item. No breeding!
+                if candidate_name ~= recipe_name then
+                    -- And if the candidate itself is not already being made from the this recipe, ie. not making gears from belts (made from gears).
+                    if not F.is_recipe_made_of_this(data_raw.recipe, recipe_name, candidate_name) then
+                        candidates_for_replacements[candidate_name] = candidate_scores
+                    end
+                end
+            end
+        end
+    end
+
+    local fluid_candidates = {};
+    local amount_of_fluid_candidates = 0;
+    local item_candidates = {};
+    local amount_of_item_candidates = 0;
+    for candidate_name, candidate in pairs(candidates_for_replacements) do
+        if (data_raw.item[candidate_name]) then
+            amount_of_item_candidates = amount_of_item_candidates + 1
+            item_candidates[candidate_name] = true
+        elseif (data_raw.fluid[candidate_name]) then
+            amount_of_fluid_candidates = amount_of_fluid_candidates + 1
+            fluid_candidates[candidate_name] = true
+        end
+    end
+
+    random.shuffle(fluid_candidates)
+    random.shuffle(item_candidates)
+    local amount_of_fluid_ingredients = 0;
+    local amount_of_item_ingredients = 0;
+    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
+        if ingredient.type == "item" then
+            amount_of_item_ingredients = amount_of_item_ingredients + 1
+        elseif ingredient.type == "fluid" then
+            amount_of_fluid_ingredients = amount_of_fluid_ingredients + 1
+        end
+    end
+
+    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
+        if ingredient.type == "item" and amount_of_item_candidates > amount_of_item_ingredients then
+            for item_candidate_name, _ in pairs(item_candidates) do
+                ingredient.name = item_candidate_name
+                item_candidates[item_candidate_name] = nil
+                raw_recipe.modified = true
+                break
+            end
+        elseif ingredient.type == "fluid" and amount_of_fluid_candidates > amount_of_fluid_ingredients then
+            for fluid_candidate_name, _ in pairs(fluid_candidates) do
+                ingredient.name = fluid_candidate_name
+                fluid_candidates[fluid_candidate_name] = nil
+                raw_recipe.modified = true
+                break
+            end
+        end
+    end
+    if raw_recipe.modified == true then
+        raw_recipe.original_recipe_cost_scores = recipe_cost_scores
     end
 end
 
