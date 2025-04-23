@@ -12,6 +12,8 @@ function F.merge_tables(table1, table2)
     return table1
 end
 
+---@param smaller_table table Table with less or equal amount of elements
+---@param larger_table table Table with more or the same amount of elements
 function F.table_keys_subset(smaller_table, larger_table)
     local smaller_table_length = 0;
     for key, _ in pairs(smaller_table) do
