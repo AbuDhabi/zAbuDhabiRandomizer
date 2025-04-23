@@ -1,6 +1,7 @@
 local util = require "scripts.utilities"
 local defines = require "scripts.defines"
 local tech = require "scripts.technology"
+local material = require "scripts.raw_materials"
 
 local F = {};
 
@@ -107,6 +108,99 @@ function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
         end
     end
     return false
+end
+
+function F.balance_costs(data_raw, original_recipe_cost_scores)
+    for recipe_name, recipe_raw in pairs(data_raw.recipe) do
+        if recipe_raw.modified then
+            local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
+            local updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
+            local old_recipe_cost_scores = original_recipe_cost_scores[recipe_name]
+    
+            -- Adjust costs if they're not sufficiently close to the original.
+            local loop_breaker = 0;
+            local acceptable_ratio = 1.1;
+            local maximum_iterations = 100;
+            -- Items
+            while (updated_recipe_cost_scores.item / old_recipe_cost_scores.item) > acceptable_ratio  do
+                util.logg(recipe_name .. " is too item expensive " .. updated_recipe_cost_scores.item .. " > " .. old_recipe_cost_scores.item)
+                for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                    if ingredient_raw.type == "item" then
+                        ingredient_raw.amount = math.floor(ingredient_raw.amount / acceptable_ratio) -- Always decrements by at least one.
+                        if ingredient_raw.amount < 1 then
+                            ingredient_raw.amount = 1
+                        end
+                    end
+                end
+                updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
+                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
+                loop_breaker = loop_breaker + 1;
+                if loop_breaker > maximum_iterations then
+                    break;
+                end
+            end
+            loop_breaker = 0;
+            while (old_recipe_cost_scores.item / updated_recipe_cost_scores.item) > acceptable_ratio do
+                util.logg(recipe_name .. " is too item cheap " .. updated_recipe_cost_scores.item .. " < " .. old_recipe_cost_scores.item)
+                for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                    if ingredient_raw.type == "item" then
+                        ingredient_raw.amount = math.ceil(ingredient_raw.amount * acceptable_ratio) -- Always increments by at least one.
+                        if ingredient_raw.amount < 1 then
+                            ingredient_raw.amount = 1
+                        end
+                    end
+                end
+                updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
+                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
+                loop_breaker = loop_breaker + 1;
+                if loop_breaker > maximum_iterations then
+                    break;
+                end
+            end
+            -- Fluids
+            loop_breaker = 0;
+            while (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid) > acceptable_ratio  do
+                util.logg(recipe_name .. " is too fluid expensive " .. updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.fluid)
+                for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                    if ingredient_raw.type == "fluid" then
+                        ingredient_raw.amount = math.floor(ingredient_raw.amount / acceptable_ratio) -- Always decrements by at least one.
+                        if ingredient_raw.amount < 1 then
+                            ingredient_raw.amount = 1
+                        end
+                    end
+                end
+                updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
+                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
+                loop_breaker = loop_breaker + 1;
+                if loop_breaker > maximum_iterations then
+                    break;
+                end
+            end
+            loop_breaker = 0;
+            while (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid) > acceptable_ratio do
+                util.logg(recipe_name .. " is too fluid cheap " .. updated_recipe_cost_scores.fluid .. " < " .. old_recipe_cost_scores.fluid)
+                for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                    if ingredient_raw.type == "fluid" then
+                        ingredient_raw.amount = math.ceil(ingredient_raw.amount * acceptable_ratio) -- Always increments by at least one.
+                        if ingredient_raw.amount < 1 then
+                            ingredient_raw.amount = 1
+                        end
+                    end
+                end
+                updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
+                updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
+                loop_breaker = loop_breaker + 1;
+                if loop_breaker > maximum_iterations then
+                    break;
+                end
+            end
+        end
+    end
 end
 
 
