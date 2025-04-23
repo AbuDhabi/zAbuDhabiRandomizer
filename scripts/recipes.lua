@@ -110,13 +110,13 @@ function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
     return false
 end
 
-function F.balance_costs(data_raw, original_recipe_cost_scores)
+function F.balance_costs(data_raw)
     for recipe_name, recipe_raw in pairs(data_raw.recipe) do
         if recipe_raw.modified then
             local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
             local updated_recipe_raw_materials = F.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
             local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
-            local old_recipe_cost_scores = original_recipe_cost_scores[recipe_name]
+            local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores
     
             -- Adjust costs if they're not sufficiently close to the original.
             local loop_breaker = 0;

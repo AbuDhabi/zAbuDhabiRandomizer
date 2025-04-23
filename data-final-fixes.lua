@@ -7,22 +7,23 @@ local recipes_tests = require "scripts.recipes_tests"
 
 random.seed(412)
 
-local original_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
-local technologies = tech.get_technology_table(data.raw.technology, data.raw.recipe);
+local data_raw_working_copy = table.deepcopy(data.raw)
+
+local original_filtered_recipes = recipes.filter_out_ignored_recipes(data_raw_working_copy.recipe)
+local technologies = tech.get_technology_table(data_raw_working_copy.technology, data_raw_working_copy.recipe);
 local starting_recipes = recipes.get_enabled_recipes(original_filtered_recipes)
 
 util.logg(starting_recipes)
 
-local original_recipe_cost_scores = {};
 for recipe_name, recipe in pairs(starting_recipes) do
-    local raw_recipe = data.raw.recipe[recipe_name]
+    util.logg(recipe_name)
+    local raw_recipe = data_raw_working_copy.recipe[recipe_name]
     local recipe_raw_materials = recipes.get_recipe_raw_materials(original_filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
-    local recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, recipe_raw_materials);
-    original_recipe_cost_scores[recipe_name] = recipe_cost_scores
+    local recipe_cost_scores = material.get_raw_material_costs(data_raw_working_copy.item, data_raw_working_copy.fluid, recipe_raw_materials);
     local candidates_for_replacements = {};
     for candidate_name, candidate in pairs(starting_recipes) do
         local candidate_raw_materials = recipes.get_recipe_raw_materials(original_filtered_recipes, candidate_name, 1)
-        local candidate_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, candidate_raw_materials);
+        local candidate_scores = material.get_raw_material_costs(data_raw_working_copy.item, data_raw_working_copy.fluid, candidate_raw_materials);
         -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
         if (candidate_scores.item < recipe_cost_scores.item or (candidate_scores.item == recipe_cost_scores.item and candidate_scores.item == 0)) and (candidate_scores.fluid < recipe_cost_scores.fluid or (candidate_scores.fluid == recipe_cost_scores.fluid and candidate_scores.fluid == 0)) then
             -- And only if their raw material list is a subset of the raw material list of the recipe to be randomized.
@@ -30,7 +31,7 @@ for recipe_name, recipe in pairs(starting_recipes) do
                 -- And if it's not the same item. No breeding!
                 if candidate_name ~= recipe_name then
                     -- And if the candidate itself is not already being made from the this recipe, ie. not making gears from belts (made from gears).
-                    if not recipes.is_recipe_made_of_this(data.raw.recipe, recipe_name, candidate_name) then
+                    if not recipes.is_recipe_made_of_this(data_raw_working_copy.recipe, recipe_name, candidate_name) then
                         candidates_for_replacements[candidate_name] = candidate_scores
                     end
                 end
@@ -43,10 +44,10 @@ for recipe_name, recipe in pairs(starting_recipes) do
     local item_candidates = {};
     local amount_of_item_candidates = 0;
     for candidate_name, candidate in pairs(candidates_for_replacements) do
-        if (data.raw.item[candidate_name]) then
+        if (data_raw_working_copy.item[candidate_name]) then
             amount_of_item_candidates = amount_of_item_candidates + 1
             item_candidates[candidate_name] = true
-        elseif (data.raw.fluid[candidate_name]) then
+        elseif (data_raw_working_copy.fluid[candidate_name]) then
             amount_of_fluid_candidates = amount_of_fluid_candidates + 1
             fluid_candidates[candidate_name] = true
         end
@@ -81,9 +82,12 @@ for recipe_name, recipe in pairs(starting_recipes) do
             end
         end
     end
+    if raw_recipe.modified == true then
+        raw_recipe.original_recipe_cost_scores = recipe_cost_scores
+    end
 end
 
-recipes.balance_costs(data.raw, original_recipe_cost_scores);
+recipes.balance_costs(data_raw_working_copy);
 
 for tech_name, tech in pairs(technologies) do
     local recipes_unlocked = recipes.get_starting_and_unlocked_recipes(original_filtered_recipes, technologies, tech_name)
@@ -92,6 +96,9 @@ for tech_name, tech in pairs(technologies) do
 
     --util.logg(recipes_to_randomize)
 end
+
+-- Assign new values to raws.
+data.raw = data_raw_working_copy;
 
 -- Recalculate all recycling recipes, as implemented by the developers.
 if mods["quality"] then
