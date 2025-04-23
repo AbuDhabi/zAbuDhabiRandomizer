@@ -3,8 +3,9 @@ local tech = require "scripts.technology"
 local recipes = require "scripts.recipes"
 local random = require "scripts.random"
 local material = require "scripts.raw_materials"
+local recipes_tests = require "scripts.recipes_tests"
 
-random.seed(42)
+random.seed(412)
 
 local original_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
 local technologies = tech.get_technology_table(data.raw.technology, data.raw.recipe);
@@ -12,10 +13,12 @@ local starting_recipes = recipes.get_enabled_recipes(original_filtered_recipes)
 
 util.logg(starting_recipes)
 
+local original_recipe_cost_scores = {};
 for recipe_name, recipe in pairs(starting_recipes) do
     local raw_recipe = data.raw.recipe[recipe_name]
     local recipe_raw_materials = recipes.get_recipe_raw_materials(original_filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
     local recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, recipe_raw_materials);
+    original_recipe_cost_scores[recipe_name] = recipe_cost_scores
     local candidates_for_replacements = {};
     for candidate_name, candidate in pairs(starting_recipes) do
         local candidate_raw_materials = recipes.get_recipe_raw_materials(original_filtered_recipes, candidate_name, 1)
@@ -49,8 +52,6 @@ for recipe_name, recipe in pairs(starting_recipes) do
         end
     end
 
-    util.logg(recipe_name)
-    util.logg(candidates_for_replacements)
     random.shuffle(fluid_candidates)
     random.shuffle(item_candidates)
     local amount_of_fluid_ingredients = 0;
@@ -62,25 +63,113 @@ for recipe_name, recipe in pairs(starting_recipes) do
             amount_of_fluid_ingredients = amount_of_fluid_ingredients + 1
         end
     end
-    util.logg(#item_candidates)
-    util.logg(#fluid_candidates)
+
     for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
         if ingredient.type == "item" and amount_of_item_candidates > amount_of_item_ingredients then
             for item_candidate_name, _ in pairs(item_candidates) do
                 ingredient.name = item_candidate_name
                 item_candidates[item_candidate_name] = nil
+                raw_recipe.modified = true
                 break
             end
         elseif ingredient.type == "fluid" and amount_of_fluid_candidates > amount_of_fluid_ingredients then
             for fluid_candidate_name, _ in pairs(fluid_candidates) do
                 ingredient.name = fluid_candidate_name
                 fluid_candidates[fluid_candidate_name] = nil
+                raw_recipe.modified = true
                 break
             end
         end
     end
-    -- TODO: Merge duplicates. That breaks things.
-    -- TODO: Handle cost approximation.
+end
+
+for recipe_name, recipe_raw in pairs(data.raw.recipe) do
+    if recipe_raw.modified then
+        local updated_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
+        local updated_recipe_raw_materials = recipes.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+        local updated_recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, updated_recipe_raw_materials);
+        local old_recipe_cost_scores = original_recipe_cost_scores[recipe_name]
+
+        -- Adjust costs if they're not sufficiently close to the original.
+        local loop_breaker = 0;
+        -- Items
+        while old_recipe_cost_scores.item < (updated_recipe_cost_scores.item * 2) do
+            util.logg(recipe_name .. " is too item expensive " .. (updated_recipe_cost_scores.item * 2) .. " > " .. old_recipe_cost_scores.item)
+            for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                if ingredient_raw.type == "item" then
+                    ingredient_raw.amount = math.floor(ingredient_raw.amount / 2)
+                    if ingredient_raw.amount == 0 then
+                        ingredient_raw.amount = 1
+                    end
+                end
+            end
+            updated_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
+            updated_recipe_raw_materials = recipes.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            updated_recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, updated_recipe_raw_materials);
+            loop_breaker = loop_breaker + 1;
+            if loop_breaker > 100 then
+                break;
+            end
+        end
+        loop_breaker = 0;
+        while old_recipe_cost_scores.item > (updated_recipe_cost_scores.item * 2) do
+            util.logg(recipe_name .. " is too item cheap " .. (updated_recipe_cost_scores.item * 2) .. " < " .. old_recipe_cost_scores.item)
+            for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                if ingredient_raw.type == "item" then
+                    ingredient_raw.amount = math.floor(ingredient_raw.amount * 2)
+                    if ingredient_raw.amount == 0 then
+                        ingredient_raw.amount = 1
+                    end
+                end
+            end
+            updated_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
+            updated_recipe_raw_materials = recipes.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            updated_recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, updated_recipe_raw_materials);
+            loop_breaker = loop_breaker + 1;
+            if loop_breaker > 100 then
+                break;
+            end
+        end
+        -- Fluids
+        loop_breaker = 0;
+        while old_recipe_cost_scores.fluid < (updated_recipe_cost_scores.fluid * 2) do
+            util.logg(recipe_name .. " is too fluid expensive " .. (updated_recipe_cost_scores.fluid * 2) .. " > " .. old_recipe_cost_scores.fluid)
+            for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                if ingredient_raw.type == "fluid" then
+                    ingredient_raw.amount = math.floor(ingredient_raw.amount / 2)
+                    if ingredient_raw.amount == 0 then
+                        ingredient_raw.amount = 1
+                    end
+                end
+            end
+            updated_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
+            updated_recipe_raw_materials = recipes.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            updated_recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, updated_recipe_raw_materials);
+            loop_breaker = loop_breaker + 1;
+            if loop_breaker > 100 then
+                break;
+            end
+        end
+        loop_breaker = 0;
+        while old_recipe_cost_scores.fluid > (updated_recipe_cost_scores.fluid * 2) do
+            util.logg(recipe_name .. " is too fluid cheap " .. (updated_recipe_cost_scores.fluid * 2) .. " < " .. old_recipe_cost_scores.fluid)
+            for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
+                if ingredient_raw.type == "fluid" then
+                    ingredient_raw.amount = math.floor(ingredient_raw.amount * 2)
+                    if ingredient_raw.amount == 0 then
+                        ingredient_raw.amount = 1
+                    end
+                end
+            end
+            updated_filtered_recipes = recipes.filter_out_ignored_recipes(data.raw.recipe)
+            updated_recipe_raw_materials = recipes.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            updated_recipe_cost_scores = material.get_raw_material_costs(data.raw.item, data.raw.fluid, updated_recipe_raw_materials);
+            loop_breaker = loop_breaker + 1; 
+            if loop_breaker > 100 then
+                break;
+            end
+        end
+    end
 end
 
 
@@ -92,8 +181,9 @@ for tech_name, tech in pairs(technologies) do
     --util.logg(recipes_to_randomize)
 end
 
-
 -- Recalculate all recycling recipes, as implemented by the developers.
 if mods["quality"] then
     require("__quality__.data-updates")
 end
+
+recipes_tests.raw_materials_are_accurate(original_filtered_recipes)
