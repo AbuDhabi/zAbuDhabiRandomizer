@@ -5,7 +5,7 @@ local D20, D40 = 1048576, 1099511627776  -- 2^20, 2^40
 local X1 = 0
 local X2 = 1
 
--- get a decimal value between [0, 1]
+---@return number Floating point value between [0, 1]
 function F.value()
     local U = X2*A2
     local V = (X1*A2 + X2*A1) % D20
@@ -15,7 +15,7 @@ function F.value()
     return V/D40
 end
 
--- seed the generator
+---@param seed number Seed for pseudo-random number generator
 function F.seed(seed)
     X1 = (seed * 2 + 11111) % D20
     X2 = (seed * 4 + 1) % D20
@@ -24,21 +24,27 @@ function F.seed(seed)
     F.value()
 end
 
--- get an integer value between [1, max]
+---@param max number Maximum integer
+---@return number Integer between [1, max]
 function F.int(max)
     return math.floor(F.value()*max) + 1
 end
 
--- get an integer value between [min, max]
+---@param min number Minimum integer
+---@param max number Maximum integer
+---@return number Integer between [min, max]
 function F.range(min, max)
     return min + F.int(max - min + 1) - 1
 end
 
+---@param min number Minimum float
+---@param max number Maximum float
+---@return number Floating point value between [min, max]
 function F.float_range(min, max)
     return min + F.value() * (max - min)
 end
 
--- shuffle a table
+---@param tbl table Table to be shuffled
 function F.shuffle(tbl)
     for i = #tbl, 2, -1 do
         local j = F.int(i)
