@@ -73,6 +73,30 @@ function F.raw_materials_are_accurate(recipes)
         utilities.logg(actual)
         utilities.logg(expected)
     end
+
+    amount = 1;
+    item = "iron-gear-wheel";
+    expected = {
+        ["iron-ore"] = 2
+      }
+    actual = F.test_raw_material(recipes, item, amount)
+    if not utilities.equals(actual, expected, false) then
+        utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
+        utilities.logg(actual)
+        utilities.logg(expected)
+    end
+
+    amount = 1;
+    item = "transport-belt";
+    expected = {
+        ["iron-ore"] = 1.5
+      }
+    actual = F.test_raw_material(recipes, item, amount)
+    if not utilities.equals(actual, expected, false) then
+        utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
+        utilities.logg(actual)
+        utilities.logg(expected)
+    end
 end
 
 function F.test_raw_material(recipes, item_or_fluid_name, amount_demanded)
