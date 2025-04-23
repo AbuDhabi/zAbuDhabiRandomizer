@@ -26,7 +26,10 @@ for recipe_name, recipe in pairs(starting_recipes) do
             if util.table_keys_subset(candidate_raw_materials, recipe_raw_materials) then
                 -- And if it's not the same item. No breeding!
                 if candidate_name ~= recipe_name then
-                    candidates_for_replacements[candidate_name] = candidate_scores
+                    -- And if the candidate itself is not already being made from the this recipe, ie. not making gears from belts (made from gears).
+                    if not recipes.is_recipe_made_of_this(data.raw.recipe, recipe_name, candidate_name) then
+                        candidates_for_replacements[candidate_name] = candidate_scores
+                    end
                 end
             end
         end
