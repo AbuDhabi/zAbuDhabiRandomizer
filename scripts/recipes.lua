@@ -166,7 +166,7 @@ function F.balance_costs(data_raw)
 end
 
 
-function F.randomize_recipe(data_raw, recipe_name, available_recipes, original_filtered_recipes)
+function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
     local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
@@ -235,6 +235,47 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, original_f
     if raw_recipe.modified == true then
         raw_recipe.original_recipe_cost_scores = recipe_cost_scores
     end
+end
+
+---@param filtered_recipes table
+---@param recipes_unlocked table
+---@return table filtered_recipes_unlocked Unlocked recipes that are in the pre-filtered recipes
+function F.filter_out_ignored_unlocked_recipes(filtered_recipes, recipes_unlocked)
+    local filtered_recipes_unlocked = {};
+    for unlocked_recipe_name, unlocked_recipe in pairs(recipes_unlocked) do
+        if filtered_recipes[unlocked_recipe_name] then
+            filtered_recipes_unlocked[unlocked_recipe_name] = unlocked_recipe
+        end
+    end
+    return filtered_recipes_unlocked
+end
+
+---@param data_raw table An instance of data.raw as provided by Wube
+---@param recipes_to_randomize table
+---@param current_filtered_recipes table
+function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, current_filtered_recipes)
+    -- First pass: Only recipes that aren't ignored and exist as items or fluids (recipe name == item or fluid name).
+    local filtered_recipes_to_randomize_first_pass = {};
+    for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
+        if current_filtered_recipes[recipe_to_randomize_name] and (data_raw.item[recipe_to_randomize_name] or data_raw.fluid[recipe_to_randomize_name]) then
+            filtered_recipes_to_randomize_first_pass[recipe_to_randomize_name] = recipe_to_randomize
+        end
+    end
+    -- Second pass: No breeders (recipes with a result in ingredients).
+    local filtered_recipes_to_randomize_second_pass = {};
+    for recipe_to_randomize_name, recipe_to_randomize in pairs(filtered_recipes_to_randomize_first_pass) do
+        local raw_recipe = data_raw.recipe[recipe_to_randomize_name]
+        local is_breeder = false;
+        for _, ingredient in pairs(raw_recipe.ingredients) do
+            if ingredient.name == recipe_to_randomize_name then
+                is_breeder = true;
+            end
+        end
+        if is_breeder == false then
+            filtered_recipes_to_randomize_second_pass[recipe_to_randomize_name] = recipe_to_randomize
+        end
+    end
+    return filtered_recipes_to_randomize_second_pass
 end
 
 
