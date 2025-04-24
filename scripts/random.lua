@@ -1,3 +1,5 @@
+local util = require "scripts.utilities"
+
 local F = {}
 
 local A1, A2 = 727595, 798405  -- 5^17=D20*A1+A2
@@ -44,12 +46,27 @@ function F.float_range(min, max)
     return min + F.value() * (max - min)
 end
 
----@param tbl table Table to be shuffled
+---Shuffles an array
+---@param tbl table Array; trying to shuffle a dictionary probably won't work well
 function F.shuffle(tbl)
     for i = #tbl, 2, -1 do
         local j = F.int(i)
         tbl[i], tbl[j] = tbl[j], tbl[i]
     end
+end
+
+---Picks a random key from the dictionary where the value of said key is true.
+---@param dictionary table A string->boolean dictionary
+---@return string
+function F.pick_any_true(dictionary)
+    local true_values = {};
+    for key, value in pairs(dictionary) do
+        if value == true then
+            table.insert(true_values, key)
+        end
+    end
+    F.shuffle(true_values);
+    return true_values[1]
 end
 
 return F

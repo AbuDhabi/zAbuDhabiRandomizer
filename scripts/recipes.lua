@@ -168,6 +168,10 @@ function F.balance_costs(data_raw)
 end
 
 
+---@param data_raw table Wube-provided raw data copy.
+---@param recipe_name string
+---@param available_recipes table
+---@param filtered_recipes table
 function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
     local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
@@ -216,8 +220,6 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
         end
     end
 
-    random.shuffle(fluid_candidates)
-    random.shuffle(item_candidates)
     local amount_of_fluid_ingredients = 0;
     local amount_of_item_ingredients = 0;
     for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
@@ -230,19 +232,15 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
 
     for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
         if ingredient.type == "item" and amount_of_item_candidates > amount_of_item_ingredients then
-            for item_candidate_name, _ in pairs(item_candidates) do
-                ingredient.name = item_candidate_name
-                item_candidates[item_candidate_name] = nil
-                raw_recipe.modified = true
-                break
-            end
+            local picked_item = random.pick_any_true(item_candidates)
+            ingredient.name = picked_item
+            item_candidates[picked_item] = nil
+            raw_recipe.modified = true
         elseif ingredient.type == "fluid" and amount_of_fluid_candidates > amount_of_fluid_ingredients then
-            for fluid_candidate_name, _ in pairs(fluid_candidates) do
-                ingredient.name = fluid_candidate_name
-                fluid_candidates[fluid_candidate_name] = nil
-                raw_recipe.modified = true
-                break
-            end
+            local picked_fluid = random.pick_any_true(fluid_candidates)
+            ingredient.name = picked_fluid
+            fluid_candidates[picked_fluid] = nil
+            raw_recipe.modified = true
         end
     end
     if raw_recipe.modified == true then
