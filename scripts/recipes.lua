@@ -78,7 +78,7 @@ function F.balance_costs(data_raw)
     for recipe_name, recipe_raw in pairs(data_raw.recipe) do
         if recipe_raw.modified then
             local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-            local updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+            local updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
             local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
             local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores
     
@@ -98,7 +98,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -117,7 +117,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -137,7 +137,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -156,7 +156,7 @@ function F.balance_costs(data_raw)
                     end
                 end
                 updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
-                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount)
+                updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
                 updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
                 loop_breaker = loop_breaker + 1;
                 if loop_breaker > maximum_iterations then
@@ -170,11 +170,11 @@ end
 
 function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
-    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount)
+    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
     local candidates_for_replacements = {};
     for candidate_name, candidate in pairs(available_recipes) do
-        local candidate_raw_materials = material.get_recipe_raw_materials(filtered_recipes, candidate_name, 1)
+        local candidate_raw_materials = material.get_recipe_raw_materials(filtered_recipes, candidate_name, 1, true)
         local candidate_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
         -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
         if (candidate_scores.item < recipe_cost_scores.item or (candidate_scores.item == recipe_cost_scores.item and candidate_scores.item == 0)) and (candidate_scores.fluid < recipe_cost_scores.fluid or (candidate_scores.fluid == recipe_cost_scores.fluid and candidate_scores.fluid == 0)) then
