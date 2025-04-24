@@ -172,8 +172,19 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
     local raw_recipe = data_raw.recipe[recipe_name]
     local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
+
+    -- Since these are recipes, find the results they produce.
+    local available_results = {};
+    for available_recipe_name, available_recipe in pairs(available_recipes) do
+        local recipe_raw = data_raw.recipe[available_recipe_name]
+        if recipe_raw.results then
+            for _, result in pairs(recipe_raw.results) do
+                available_results[result.name] = true
+            end
+        end
+    end
     local candidates_for_replacements = {};
-    for candidate_name, candidate in pairs(available_recipes) do
+    for candidate_name, candidate in pairs(available_results) do
         local candidate_raw_materials = material.get_recipe_raw_materials(filtered_recipes, candidate_name, 1, true)
         local candidate_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
         -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
