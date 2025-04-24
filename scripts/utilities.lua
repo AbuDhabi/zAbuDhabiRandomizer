@@ -65,4 +65,15 @@ function F.equals(o1, o2, ignore_mt)
     return true
 end
 
+---Returns length of table, even non-continuous.
+---@param tbl table Continuous or not.
+---@return number Length of table
+function F.length(tbl)
+    local length = 0;
+    for _, _ in pairs(tbl) do
+        length = length + 1;
+    end
+    return length
+end
+
 return F
