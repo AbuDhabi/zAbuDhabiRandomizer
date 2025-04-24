@@ -65,7 +65,13 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
         end
         return found_raw_materials
     else
-        return item_or_fluid_name -- Doesn't have a recipe, it's a raw material.
+        -- Doesn't have a recipe, it's a raw material.
+        if not top_level then
+            return item_or_fluid_name; -- Found in recursion.
+        else
+            return { item_or_fluid_name = amount_demanded } -- The raw material itself.
+        end
+        
     end
 end
 
