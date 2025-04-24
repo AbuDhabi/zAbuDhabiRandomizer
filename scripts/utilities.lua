@@ -5,6 +5,9 @@ function F.logg(input)
     log(serpent.block(input))
 end
 
+---@param table1 table
+---@param table2 table
+---@return table Result Merged table with keys from both and in case of both having the same key, value comes from table2
 function F.merge_tables(table1, table2)
     for key, value in pairs(table2) do
        table1[key] = value

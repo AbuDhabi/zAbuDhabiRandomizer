@@ -72,6 +72,8 @@ function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
     return false
 end
 
+---Balances costs in the raw dataset.
+---@param data_raw table Wube-provided raw data, modified by randomization.
 function F.balance_costs(data_raw)
     for recipe_name, recipe_raw in pairs(data_raw.recipe) do
         if recipe_raw.modified then
@@ -85,7 +87,7 @@ function F.balance_costs(data_raw)
             local acceptable_ratio = 1.1;
             local maximum_iterations = 100;
             -- Items
-            while (updated_recipe_cost_scores.item / old_recipe_cost_scores.item) > acceptable_ratio  do
+            while updated_recipe_cost_scores.item > 0 and (updated_recipe_cost_scores.item / old_recipe_cost_scores.item) > acceptable_ratio  do
                 util.logg(recipe_name .. " is too item expensive " .. updated_recipe_cost_scores.item .. " > " .. old_recipe_cost_scores.item)
                 for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                     if ingredient_raw.type == "item" then
@@ -104,7 +106,7 @@ function F.balance_costs(data_raw)
                 end
             end
             loop_breaker = 0;
-            while (old_recipe_cost_scores.item / updated_recipe_cost_scores.item) > acceptable_ratio do
+            while updated_recipe_cost_scores.item > 0 and (old_recipe_cost_scores.item / updated_recipe_cost_scores.item) > acceptable_ratio do
                 util.logg(recipe_name .. " is too item cheap " .. updated_recipe_cost_scores.item .. " < " .. old_recipe_cost_scores.item)
                 for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                     if ingredient_raw.type == "item" then
@@ -124,7 +126,7 @@ function F.balance_costs(data_raw)
             end
             -- Fluids
             loop_breaker = 0;
-            while (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid) > acceptable_ratio  do
+            while updated_recipe_cost_scores.fluid > 0 and (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid) > acceptable_ratio  do
                 util.logg(recipe_name .. " is too fluid expensive " .. updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.fluid)
                 for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                     if ingredient_raw.type == "fluid" then
@@ -143,7 +145,7 @@ function F.balance_costs(data_raw)
                 end
             end
             loop_breaker = 0;
-            while (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid) > acceptable_ratio do
+            while updated_recipe_cost_scores.fluid > 0 and (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid) > acceptable_ratio do
                 util.logg(recipe_name .. " is too fluid cheap " .. updated_recipe_cost_scores.fluid .. " < " .. old_recipe_cost_scores.fluid)
                 for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                     if ingredient_raw.type == "fluid" then
