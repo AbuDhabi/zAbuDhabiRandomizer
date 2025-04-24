@@ -38,25 +38,20 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
         for _, ingredient in pairs(found_recipe.ingredients) do
             if item_or_fluid_name == ingredient.name then -- Recipe is a breeder, ie. produces something from itself. Need to avoid loop.
                 if not top_level then
-                    return item_or_fluid_name;
+                    return item_or_fluid_name
                 end
-                -- TODO: Verify this amount works
-                local breeder_ingredients = {};
-                for _, breeder_ingredient in pairs(found_recipe.ingredients) do
-                    breeder_ingredients[breeder_ingredient.name] = breeder_ingredient.amount
-                end
-                return breeder_ingredients
-            end
-        end
-        for _, ingredient in pairs(found_recipe.ingredients) do
-            local ingredient_raw_materials = F.get_recipe_raw_materials(recipes, ingredient.name, ingredient.amount, false)
-            if type(ingredient_raw_materials) == "table" then
-                for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
-                    local already_counted = found_raw_materials[raw_material_name] or 0
-                    found_raw_materials[raw_material_name] = already_counted + raw_material_amount
-                 end
+                local already_counted = found_raw_materials[item_or_fluid_name] or 0
+                found_raw_materials[item_or_fluid_name] = already_counted + ingredient.amount
             else
-                found_raw_materials[ingredient_raw_materials] = ingredient.amount
+                local ingredient_raw_materials = F.get_recipe_raw_materials(recipes, ingredient.name, ingredient.amount, false)
+                if type(ingredient_raw_materials) == "table" then
+                    for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
+                        local already_counted = found_raw_materials[raw_material_name] or 0
+                        found_raw_materials[raw_material_name] = already_counted + raw_material_amount
+                     end
+                else
+                    found_raw_materials[ingredient_raw_materials] = ingredient.amount
+                end
             end
         end
         -- Multiply by demanded-to-produced ratio.
@@ -69,7 +64,9 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
         if not top_level then
             return item_or_fluid_name; -- Found in recursion.
         else
-            return { item_or_fluid_name = amount_demanded } -- The raw material itself.
+            local return_value = {};
+            return_value[item_or_fluid_name] = amount_demanded;
+            return return_value -- The raw material itself.
         end
         
     end

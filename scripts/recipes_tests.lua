@@ -101,9 +101,9 @@ function F.raw_materials_are_accurate(recipes)
     amount = 1;
     item = "pentapod-egg";
     expected = {
-        ["water"] = 60,
-        ["nutrients"] = 30,
-        ["pentapod-egg"] = 1
+        nutrients = 15,
+        ["pentapod-egg"] = 0.5,
+        water = 30
       }
     actual = F.test_raw_material(recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
