@@ -332,16 +332,13 @@ end
 ---@param recipes_to_randomize table
 ---@param current_filtered_recipes table
 function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, current_filtered_recipes)
-    -- First pass: Only recipes that aren't ignored and exist as items (or subtypes of item) or fluids.
-    local filtered_recipes_to_randomize_first_pass = {};
+    local filtered_recipes_to_randomize = table.deepcopy(recipes_to_randomize);
     for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
-        if current_filtered_recipes[recipe_to_randomize_name] and (F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_to_randomize_name)) then
-            filtered_recipes_to_randomize_first_pass[recipe_to_randomize_name] = recipe_to_randomize
+        -- Only recipes that aren't ignored and exist as items (or subtypes of item) or fluids.
+        if not current_filtered_recipes[recipe_to_randomize_name] or (not F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_to_randomize_name)) then
+            filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
-    end
-    -- Second pass: No breeders (recipes with a result in ingredients).
-    local filtered_recipes_to_randomize_second_pass = {};
-    for recipe_to_randomize_name, recipe_to_randomize in pairs(filtered_recipes_to_randomize_first_pass) do
+        -- No breeders (recipes with a result in ingredients).
         local raw_recipe = data_raw.recipe[recipe_to_randomize_name]
         local is_breeder = false;
         for _, ingredient in pairs(raw_recipe.ingredients) do
@@ -349,14 +346,10 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
                 is_breeder = true;
             end
         end
-        if is_breeder == false then
-            filtered_recipes_to_randomize_second_pass[recipe_to_randomize_name] = recipe_to_randomize
+        if is_breeder == true then
+            filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
-    end
-    -- Third pass: If a recipe is made solely from raw materials, don't randomize it.
-    local filtered_recipes_to_randomize_third_pass = {};
-    for recipe_to_randomize_name, recipe_to_randomize in pairs(filtered_recipes_to_randomize_second_pass) do
-        local raw_recipe = data_raw.recipe[recipe_to_randomize_name]
+        -- If a recipe is made solely from raw materials, don't randomize it.
         local raw_materials = material.get_recipe_raw_materials(current_filtered_recipes, recipe_to_randomize_name, 1, true)
         local has_non_raw_ingredient = false;
         for _, ingredient in pairs(raw_recipe.ingredients) do
@@ -364,12 +357,12 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
                 has_non_raw_ingredient = true;
             end
         end
-        if has_non_raw_ingredient == true then
-            filtered_recipes_to_randomize_third_pass[recipe_to_randomize_name] = recipe_to_randomize
+        if has_non_raw_ingredient == false then
+            filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
     end
 
-    return filtered_recipes_to_randomize_third_pass
+    return filtered_recipes_to_randomize
 end
 
 
