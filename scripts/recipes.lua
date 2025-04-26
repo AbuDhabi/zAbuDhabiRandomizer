@@ -183,7 +183,10 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
         local recipe_raw = data_raw.recipe[available_recipe_name]
         if recipe_raw.results then
             for _, result in pairs(recipe_raw.results) do
-                available_results[result.name] = true
+                -- Deliberately excluding tools, ie. science packs.
+                if data_raw.item[result.name] or data_raw.fluid[result.name] then
+                    available_results[result.name] = true
+                end
             end
         end
     end
@@ -265,10 +268,10 @@ end
 ---@param recipes_to_randomize table
 ---@param current_filtered_recipes table
 function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, current_filtered_recipes)
-    -- First pass: Only recipes that aren't ignored and exist as items or fluids (recipe name == item or fluid name).
+    -- First pass: Only recipes that aren't ignored and exist as items/tools/fluids.
     local filtered_recipes_to_randomize_first_pass = {};
     for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
-        if current_filtered_recipes[recipe_to_randomize_name] and (data_raw.item[recipe_to_randomize_name] or data_raw.fluid[recipe_to_randomize_name]) then
+        if current_filtered_recipes[recipe_to_randomize_name] and (data_raw.item[recipe_to_randomize_name] or data_raw.fluid[recipe_to_randomize_name] or data_raw.tool[recipe_to_randomize_name]) then
             filtered_recipes_to_randomize_first_pass[recipe_to_randomize_name] = recipe_to_randomize
         end
     end
