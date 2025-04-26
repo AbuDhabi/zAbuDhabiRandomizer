@@ -17,7 +17,10 @@ F.types_of_items_and_fluid = {
     "gun",
     "armor",
     "capsule",
-    "projectile"
+    "projectile",
+    "ammo"
 }
+
+F.maximum_item_amount = 65535
 
 return F;
