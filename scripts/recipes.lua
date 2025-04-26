@@ -6,6 +6,9 @@ local random = require "scripts.random"
 
 local F = {};
 
+---Filters out recipes which should be ignored based on defines. Stuff like parameter placeholders, barreling/unbarreling, and hidden recipes.
+---@param data_raw_recipes table Raw recipes from Wube.
+---@return table Recipes Filtered and deep-copied.
 function F.filter_out_ignored_recipes(data_raw_recipes)
     local filtered_recipes = {}
     for recipe_name, recipe_raw in pairs(data_raw_recipes) do
@@ -38,6 +41,9 @@ function F.try_to_find_a_non_obvious_recipe(recipes, item_or_fluid_name)
     return nil
 end
 
+---Gets enabled recipes (ie. non-disabled).
+---@param recipes table Recipes in Wube-provided data structures.
+---@return table Recipes string->bool dictionary.
 function F.get_enabled_recipes(recipes)
     local starting_recipes = {};
     for recipe_name, recipe in pairs(recipes) do
@@ -48,6 +54,11 @@ function F.get_enabled_recipes(recipes)
     return starting_recipes
 end
 
+---Gets starting recipes and those unlocked by technology and its prerequisites.
+---@param recipes table Filtered recipes.
+---@param tech_tree table
+---@param tech_name string
+---@return table
 function F.get_starting_and_unlocked_recipes(recipes, tech_tree, tech_name)
     local starting_recipes = F.get_enabled_recipes(recipes)
     local recipes_unlocked_by_tech = tech.get_unlocked_recipes(tech_tree, tech_name)
@@ -55,6 +66,11 @@ function F.get_starting_and_unlocked_recipes(recipes, tech_tree, tech_name)
     return starting_recipes
 end
 
+---Determines if recipe is made of an ingredient.
+---@param recipes table Filtered recipes.
+---@param recipe_name string
+---@param ingredient_name string
+---@return boolean
 function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
     local recipe = recipes[recipe_name];
     if not recipe or not recipe.ingredients then
