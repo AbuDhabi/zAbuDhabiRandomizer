@@ -18,7 +18,10 @@ F.types_of_items_and_fluid = {
     "armor",
     "capsule",
     "projectile",
-    "ammo"
+    "ammo",
+    "space-platform-starter-pack",
+    "module",
+    "item-with-entity-data"
 }
 
 F.maximum_item_amount = 65535
