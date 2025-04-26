@@ -353,7 +353,23 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
             filtered_recipes_to_randomize_second_pass[recipe_to_randomize_name] = recipe_to_randomize
         end
     end
-    return filtered_recipes_to_randomize_second_pass
+    -- Third pass: If a recipe is made solely from raw materials, don't randomize it.
+    local filtered_recipes_to_randomize_third_pass = {};
+    for recipe_to_randomize_name, recipe_to_randomize in pairs(filtered_recipes_to_randomize_second_pass) do
+        local raw_recipe = data_raw.recipe[recipe_to_randomize_name]
+        local raw_materials = material.get_recipe_raw_materials(current_filtered_recipes, recipe_to_randomize_name, 1, true)
+        local has_non_raw_ingredient = false;
+        for _, ingredient in pairs(raw_recipe.ingredients) do
+            if not raw_materials[ingredient.name] then
+                has_non_raw_ingredient = true;
+            end
+        end
+        if has_non_raw_ingredient == true then
+            filtered_recipes_to_randomize_third_pass[recipe_to_randomize_name] = recipe_to_randomize
+        end
+    end
+
+    return filtered_recipes_to_randomize_third_pass
 end
 
 
