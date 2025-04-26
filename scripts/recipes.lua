@@ -64,7 +64,7 @@ function F.is_recipe_made_of_this(recipes, recipe_name, ingredient_name)
         if recipe_ingredient.name == ingredient_name then
             return true
         else
-            if F.is_recipe_made_of_this(recipes, recipe_ingredient, ingredient_name) == true then
+            if F.is_recipe_made_of_this(recipes, recipe_ingredient.name, ingredient_name) == true then
                 return true
             end
         end
@@ -198,7 +198,7 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
                 -- And if it's not the same item. No breeding!
                 if candidate_name ~= recipe_name then
                     -- And if the candidate itself is not already being made from the this recipe, ie. not making gears from belts (made from gears).
-                    if not F.is_recipe_made_of_this(data_raw.recipe, recipe_name, candidate_name) then
+                    if not F.is_recipe_made_of_this(data_raw.recipe, candidate_name, recipe_name) then
                         candidates_for_replacements[candidate_name] = candidate_scores
                     end
                 end
