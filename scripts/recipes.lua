@@ -264,14 +264,26 @@ function F.filter_out_ignored_unlocked_recipes(filtered_recipes, recipes_unlocke
     return filtered_recipes_unlocked
 end
 
+---@param data_raw table Wube-provided raw data.
+---@param recipe_name string
+---@return boolean
+function F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_name)
+    for _, type_of_thing in pairs(defines.types_of_items_and_fluid) do
+       if data_raw[type_of_thing][recipe_name] then
+        return true
+       end
+    end
+    return false
+end
+
 ---@param data_raw table An instance of data.raw as provided by Wube
 ---@param recipes_to_randomize table
 ---@param current_filtered_recipes table
 function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, current_filtered_recipes)
-    -- First pass: Only recipes that aren't ignored and exist as items/tools/fluids.
+    -- First pass: Only recipes that aren't ignored and exist as items (or subtypes of item) or fluids.
     local filtered_recipes_to_randomize_first_pass = {};
     for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
-        if current_filtered_recipes[recipe_to_randomize_name] and (data_raw.item[recipe_to_randomize_name] or data_raw.fluid[recipe_to_randomize_name] or data_raw.tool[recipe_to_randomize_name]) then
+        if current_filtered_recipes[recipe_to_randomize_name] and (F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_to_randomize_name)) then
             filtered_recipes_to_randomize_first_pass[recipe_to_randomize_name] = recipe_to_randomize
         end
     end
