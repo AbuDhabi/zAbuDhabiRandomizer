@@ -376,6 +376,11 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
         if has_non_raw_ingredient == false then
             filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
+        -- If recipe has surface conditions, don't randomize it.
+        -- TODO: Maybe there is a better method.
+        if raw_recipe.surface_conditions and next(raw_recipe.surface_conditions) ~= nil then
+            filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
+        end
     end
 
     return filtered_recipes_to_randomize
