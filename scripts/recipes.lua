@@ -96,7 +96,7 @@ function F.balance_costs(data_raw)
             local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
             local updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
             local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
-            local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores
+            local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores -- TODO: Calculate this for originals, not originals based in randomized prerequisites.
     
             -- Adjust costs if they're not sufficiently close to the original.
             local loop_breaker = 0;
@@ -107,7 +107,7 @@ function F.balance_costs(data_raw)
                 -- Too expensive.
                 loop_breaker = 0;
                 while ((updated_recipe_cost_scores.item / old_recipe_cost_scores.item) * (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid)) > acceptable_ratio  do
-                    util.logg(recipe_name .. " is too expensive " .. updated_recipe_cost_scores.item + updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.item + old_recipe_cost_scores.fluid)
+                    util.logg(recipe_name .. " is too expensive " .. updated_recipe_cost_scores.item * updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.item * old_recipe_cost_scores.fluid)
                     for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                         ingredient_raw.amount = math.floor(ingredient_raw.amount / acceptable_ratio) -- Always decrements by at least one.
                         if ingredient_raw.amount < 1 then
@@ -235,6 +235,70 @@ function F.balance_costs(data_raw)
     end
 end
 
+---@param raw_recipe table Wube-provided recipe structure.
+---@param candidates_and_counts table Output of get_candidates_and_counts().
+---@param original_recipe_cost_scores table 
+function F.pick_new_ingredients(raw_recipe, candidates_and_counts, original_recipe_cost_scores)
+    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
+        if ingredient.type == "item" and candidates_and_counts.amount_of_item_candidates > candidates_and_counts.amount_of_item_ingredients then
+            local picked_item = random.pick_any_true(candidates_and_counts.item_candidates)
+            ingredient.name = picked_item
+            candidates_and_counts.item_candidates[picked_item] = nil
+            raw_recipe.modified = true
+        elseif ingredient.type == "fluid" and candidates_and_counts.amount_of_fluid_candidates > candidates_and_counts.amount_of_fluid_ingredients then
+            local picked_fluid = random.pick_any_true(candidates_and_counts.fluid_candidates)
+            ingredient.name = picked_fluid
+            candidates_and_counts.fluid_candidates[picked_fluid] = nil
+            raw_recipe.modified = true
+        end
+    end
+
+    if raw_recipe.modified == true then
+        raw_recipe.original_recipe_cost_scores = original_recipe_cost_scores
+    end
+end
+
+---@param data_raw table Wub-provided raw data.
+---@param recipe_name string
+---@param candidates_for_replacements table
+---@return table Result item_candidates, fluid_candidates, amount_of_item_candidates, amount_of_fluid_candidates, amount_of_item_ingredients, amount_of_fluid_ingredients
+function F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_replacements)
+    local raw_recipe = data_raw.recipe[recipe_name]
+    local fluid_candidates = {};
+    local amount_of_fluid_candidates = 0;
+    local item_candidates = {};
+    local amount_of_item_candidates = 0;
+    -- TODO: Include subtypes of item in here. See defines for a list for candidates.
+    for candidate_name, candidate in pairs(candidates_for_replacements) do
+        if (data_raw.item[candidate_name]) then
+            amount_of_item_candidates = amount_of_item_candidates + 1
+            item_candidates[candidate_name] = true
+        elseif (data_raw.fluid[candidate_name]) then
+            amount_of_fluid_candidates = amount_of_fluid_candidates + 1
+            fluid_candidates[candidate_name] = true
+        end
+    end
+
+    local amount_of_fluid_ingredients = 0;
+    local amount_of_item_ingredients = 0;
+    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
+        if ingredient.type == "item" then
+            amount_of_item_ingredients = amount_of_item_ingredients + 1
+        elseif ingredient.type == "fluid" then
+            amount_of_fluid_ingredients = amount_of_fluid_ingredients + 1
+        end
+    end
+
+    return {
+        item_candidates = item_candidates,
+        fluid_candidates = fluid_candidates,
+        amount_of_item_candidates = amount_of_item_candidates,
+        amount_of_fluid_candidates = amount_of_fluid_candidates,
+        amount_of_item_ingredients = amount_of_item_ingredients,
+        amount_of_fluid_ingredients = amount_of_fluid_ingredients
+    }
+end
+
 
 ---@param data_raw table Wube-provided raw data copy.
 ---@param recipe_name string
@@ -243,6 +307,7 @@ end
 function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
     local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
+    -- TODO: Original cost scores should be calculated on unmodified raws, all of them. Then fed into this function.
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
 
     -- Since these are recipes, find the results they produce.
@@ -277,46 +342,8 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
         end
     end
 
-    local fluid_candidates = {};
-    local amount_of_fluid_candidates = 0;
-    local item_candidates = {};
-    local amount_of_item_candidates = 0;
-    for candidate_name, candidate in pairs(candidates_for_replacements) do
-        if (data_raw.item[candidate_name]) then
-            amount_of_item_candidates = amount_of_item_candidates + 1
-            item_candidates[candidate_name] = true
-        elseif (data_raw.fluid[candidate_name]) then
-            amount_of_fluid_candidates = amount_of_fluid_candidates + 1
-            fluid_candidates[candidate_name] = true
-        end
-    end
-
-    local amount_of_fluid_ingredients = 0;
-    local amount_of_item_ingredients = 0;
-    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
-        if ingredient.type == "item" then
-            amount_of_item_ingredients = amount_of_item_ingredients + 1
-        elseif ingredient.type == "fluid" then
-            amount_of_fluid_ingredients = amount_of_fluid_ingredients + 1
-        end
-    end
-
-    for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
-        if ingredient.type == "item" and amount_of_item_candidates > amount_of_item_ingredients then
-            local picked_item = random.pick_any_true(item_candidates)
-            ingredient.name = picked_item
-            item_candidates[picked_item] = nil
-            raw_recipe.modified = true
-        elseif ingredient.type == "fluid" and amount_of_fluid_candidates > amount_of_fluid_ingredients then
-            local picked_fluid = random.pick_any_true(fluid_candidates)
-            ingredient.name = picked_fluid
-            fluid_candidates[picked_fluid] = nil
-            raw_recipe.modified = true
-        end
-    end
-    if raw_recipe.modified == true then
-        raw_recipe.original_recipe_cost_scores = recipe_cost_scores
-    end
+    local candidates_and_counts = F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_replacements);
+    F.pick_new_ingredients(raw_recipe, candidates_and_counts, recipe_cost_scores)
 end
 
 ---@param filtered_recipes table
@@ -335,8 +362,8 @@ end
 ---@param data_raw table Wube-provided raw data.
 ---@param recipe_name string
 ---@return boolean
-function F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_name)
-    for _, type_of_thing in pairs(defines.types_of_items_and_fluid) do
+function F.is_a_randomizable_type_of_item_or_fluid(data_raw, recipe_name)
+    for _, type_of_thing in pairs(defines.types_of_items_and_fluid_for_randomizable_recipes) do
        if data_raw[type_of_thing][recipe_name] then
         return true
        end
@@ -351,7 +378,7 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
     local filtered_recipes_to_randomize = table.deepcopy(recipes_to_randomize);
     for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
         -- Only recipes that aren't ignored and exist as items (or subtypes of item) or fluids.
-        if not current_filtered_recipes[recipe_to_randomize_name] or (not F.exists_in_items_and_subtypes_or_fluids(data_raw, recipe_to_randomize_name)) then
+        if not current_filtered_recipes[recipe_to_randomize_name] or (not F.is_a_randomizable_type_of_item_or_fluid(data_raw, recipe_to_randomize_name)) then
             filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
         -- No breeders (recipes with a result in ingredients).
@@ -378,6 +405,7 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
         end
         -- If recipe has surface conditions, don't randomize it.
         -- TODO: Maybe there is a better method.
+        -- IDEA: If recipe has surface conditions, its new raw materials must match old raw materials.
         if raw_recipe.surface_conditions and next(raw_recipe.surface_conditions) ~= nil then
             filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end

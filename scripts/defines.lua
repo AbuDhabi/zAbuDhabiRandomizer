@@ -10,10 +10,23 @@ F.ignored_recipe_categories = {
     ["parameters"] = true
 }
 
-F.types_of_items_and_fluid = {
+F.types_of_items_and_fluid_for_randomizable_recipes = {
     "fluid",
     "item",
     "tool",
+    "gun",
+    "armor",
+    "capsule",
+    "projectile",
+    "ammo",
+    "space-platform-starter-pack",
+    "module",
+    "item-with-entity-data"
+}
+
+F.types_of_items_and_fluid_for_ingredient_candidates = {
+    "fluid",
+    "item",
     "gun",
     "armor",
     "capsule",
