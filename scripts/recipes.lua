@@ -107,6 +107,7 @@ function F.balance_costs(data_raw)
                 -- Too expensive.
                 loop_breaker = 0;
                 while ((updated_recipe_cost_scores.item / old_recipe_cost_scores.item) * (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid)) > acceptable_ratio  do
+                    -- TODO: Fix the log.
                     util.logg(recipe_name .. " is too expensive " .. updated_recipe_cost_scores.item * updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.item * old_recipe_cost_scores.fluid)
                     for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                         ingredient_raw.amount = math.floor(ingredient_raw.amount / acceptable_ratio) -- Always decrements by at least one.
@@ -127,7 +128,8 @@ function F.balance_costs(data_raw)
                 -- Too cheap.
                 loop_breaker = 0;
                 while ((old_recipe_cost_scores.item / updated_recipe_cost_scores.item) * (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid)) > acceptable_ratio  do
-                    util.logg(recipe_name .. " is too cheap " .. updated_recipe_cost_scores.item + updated_recipe_cost_scores.fluid .. " < " .. old_recipe_cost_scores.item + old_recipe_cost_scores.fluid)
+                    -- TODO: Fix the log.
+                    util.logg(recipe_name .. " is too cheap " .. updated_recipe_cost_scores.item * updated_recipe_cost_scores.fluid .. " < " .. old_recipe_cost_scores.item * old_recipe_cost_scores.fluid)
                     for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                         ingredient_raw.amount = math.ceil(ingredient_raw.amount * acceptable_ratio) -- Always increments by at least one.
                         if ingredient_raw.amount < 1 then
@@ -268,14 +270,15 @@ function F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_repla
     local amount_of_fluid_candidates = 0;
     local item_candidates = {};
     local amount_of_item_candidates = 0;
-    -- TODO: Include subtypes of item in here. See defines for a list for candidates.
     for candidate_name, candidate in pairs(candidates_for_replacements) do
-        if (data_raw.item[candidate_name]) then
-            amount_of_item_candidates = amount_of_item_candidates + 1
-            item_candidates[candidate_name] = true
-        elseif (data_raw.fluid[candidate_name]) then
-            amount_of_fluid_candidates = amount_of_fluid_candidates + 1
-            fluid_candidates[candidate_name] = true
+        if F.is_acceptable_type(data_raw, candidate_name, defines.types_of_items_and_fluid_for_ingredient_candidates) then
+            if (data_raw.fluid[candidate_name]) then
+                amount_of_fluid_candidates = amount_of_fluid_candidates + 1
+                fluid_candidates[candidate_name] = true
+            else
+                amount_of_item_candidates = amount_of_item_candidates + 1
+                item_candidates[candidate_name] = true
+            end
         end
     end
 
@@ -361,9 +364,10 @@ end
 
 ---@param data_raw table Wube-provided raw data.
 ---@param recipe_name string
+---@param acceptable_types table Array of defined types, see defines.lua.
 ---@return boolean
-function F.is_a_randomizable_type_of_item_or_fluid(data_raw, recipe_name)
-    for _, type_of_thing in pairs(defines.types_of_items_and_fluid_for_randomizable_recipes) do
+function F.is_acceptable_type(data_raw, recipe_name, acceptable_types)
+    for _, type_of_thing in pairs(acceptable_types) do
        if data_raw[type_of_thing][recipe_name] then
         return true
        end
@@ -378,7 +382,7 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
     local filtered_recipes_to_randomize = table.deepcopy(recipes_to_randomize);
     for recipe_to_randomize_name, recipe_to_randomize in pairs(recipes_to_randomize) do
         -- Only recipes that aren't ignored and exist as items (or subtypes of item) or fluids.
-        if not current_filtered_recipes[recipe_to_randomize_name] or (not F.is_a_randomizable_type_of_item_or_fluid(data_raw, recipe_to_randomize_name)) then
+        if not current_filtered_recipes[recipe_to_randomize_name] or (not F.is_acceptable_type(data_raw, recipe_to_randomize_name, defines.types_of_items_and_fluid_for_randomizable_recipes)) then
             filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
         -- No breeders (recipes with a result in ingredients).
