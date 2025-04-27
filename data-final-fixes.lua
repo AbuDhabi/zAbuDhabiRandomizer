@@ -17,12 +17,16 @@ for recipe_name, recipe in pairs(starting_recipes) do
     recipes.randomize_recipe(data_raw_working_copy, recipe_name, starting_recipes, original_filtered_recipes)
 end
 
-for tech_name, tech in pairs(technologies) do
+-- TODO: Thruster fluids are used in recipes.
+-- TODO: Thruster fuel is randomized. It probably shouldn't be. Especially its fluids. Perhaps only its fluids shouldn't be.
+-- TODO: Randomizing potentially obviates the need for planet-specific raws. Dunno what to do about that!
+-- TODO: More appropriate recipes. Prebalancing. Try to pick ingredients that are roughly in line with the former raw materials cost in the given amount.
+for tech_name, technology in pairs(technologies) do
     local current_filtered_recipes = recipes.filter_out_ignored_recipes(data_raw_working_copy.recipe)
     local recipes_unlocked = recipes.get_starting_and_unlocked_recipes(current_filtered_recipes, technologies, tech_name)
     local filtered_recipes_unlocked = recipes.filter_out_ignored_unlocked_recipes(current_filtered_recipes, recipes_unlocked)
 
-    local recipes_to_randomize = tech.recipes_unlocked
+    local recipes_to_randomize = technology.recipes_unlocked
     local filtered_recipes_to_randomize = recipes.filter_out_non_randomizable_recipes(data_raw_working_copy, recipes_to_randomize, current_filtered_recipes);
 
     for recipe_name, recipe in pairs(filtered_recipes_to_randomize) do
@@ -43,4 +47,4 @@ if mods["quality"] then
 end
 
 -- Unit tests, uncomment to run.
---recipes_tests.raw_materials_are_accurate(original_filtered_recipes)
+recipes_tests.raw_materials_are_accurate(original_filtered_recipes)
