@@ -239,8 +239,7 @@ end
 
 ---@param raw_recipe table Wube-provided recipe structure.
 ---@param candidates_and_counts table Output of get_candidates_and_counts().
----@param original_recipe_cost_scores table 
-function F.pick_new_ingredients(raw_recipe, candidates_and_counts, original_recipe_cost_scores)
+function F.pick_new_ingredients(raw_recipe, candidates_and_counts)
     for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
         if ingredient.type == "item" and candidates_and_counts.amount_of_item_candidates > candidates_and_counts.amount_of_item_ingredients then
             local picked_item = random.pick_any_true(candidates_and_counts.item_candidates)
@@ -253,10 +252,6 @@ function F.pick_new_ingredients(raw_recipe, candidates_and_counts, original_reci
             candidates_and_counts.fluid_candidates[picked_fluid] = nil
             raw_recipe.modified = true
         end
-    end
-
-    if raw_recipe.modified == true then
-        raw_recipe.original_recipe_cost_scores = original_recipe_cost_scores
     end
 end
 
@@ -302,6 +297,19 @@ function F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_repla
     }
 end
 
+--- Calculates original raw materials and cost scores of the recipe, and writes them to the raws.
+---@param data_raw table Wube-provided raw data copy.
+---@param recipe_name string
+---@param available_recipes table
+---@param filtered_recipes table
+function F.annotate_with_original_cost_scores(data_raw, recipe_name, available_recipes, filtered_recipes)
+    local raw_recipe = data_raw.recipe[recipe_name]
+    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
+    local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
+    raw_recipe.original_raw_materials = recipe_raw_materials;
+    raw_recipe.original_recipe_cost_scores = recipe_cost_scores;
+end
+
 
 ---@param data_raw table Wube-provided raw data copy.
 ---@param recipe_name string
@@ -309,9 +317,8 @@ end
 ---@param filtered_recipes table
 function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
-    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
-    -- TODO: Original cost scores should be calculated on unmodified raws, all of them. Then fed into this function.
-    local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
+    local recipe_raw_materials = raw_recipe.original_raw_materials
+    local recipe_cost_scores = raw_recipe.original_recipe_cost_scores;
 
     -- Since these are recipes, find the results they produce.
     local available_results = {};
@@ -346,7 +353,7 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
     end
 
     local candidates_and_counts = F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_replacements);
-    F.pick_new_ingredients(raw_recipe, candidates_and_counts, recipe_cost_scores)
+    F.pick_new_ingredients(raw_recipe, candidates_and_counts)
 end
 
 ---@param filtered_recipes table
