@@ -5,7 +5,7 @@ local random = require "scripts.random"
 local material = require "scripts.raw_materials"
 local recipes_tests = require "scripts.recipes_tests"
 
-random.seed(412)
+random.seed(42)
 
 local data_raw_working_copy = table.deepcopy(data.raw)
 
@@ -26,10 +26,9 @@ for tech_name, technology in pairs(technologies) do
     end
 end
 
--- TODO: Thruster fluids are used in recipes.
--- TODO: Thruster fuel is randomized. It probably shouldn't be. Especially its fluids. Perhaps only its fluids shouldn't be.
 -- TODO: Randomizing potentially obviates the need for planet-specific raws. Dunno what to do about that!
 -- TODO: More appropriate recipes. Prebalancing. Try to pick ingredients that are roughly in line with the former raw materials cost in the given amount.
+-- TODO: If recipe is not getting anywhere and it's too expensive, maybe increase outputs? A thought.
 
 -- Randomize recipes unlocked by tech.
 for tech_name, technology in pairs(technologies) do
@@ -41,7 +40,7 @@ for tech_name, technology in pairs(technologies) do
     local filtered_recipes_to_randomize = recipes.filter_out_non_randomizable_recipes(data_raw_working_copy, recipes_to_randomize, current_filtered_recipes);
 
     for recipe_name, recipe in pairs(filtered_recipes_to_randomize) do
-        if not data_raw_working_copy.recipe[recipe_name].modified then
+        if not data_raw_working_copy.recipe[recipe_name].processed then
             recipes.randomize_recipe(data_raw_working_copy, recipe_name, filtered_recipes_unlocked, current_filtered_recipes)
         end
     end
