@@ -96,7 +96,7 @@ function F.balance_costs(data_raw)
             local updated_filtered_recipes = F.filter_out_ignored_recipes(data_raw.recipe)
             local updated_recipe_raw_materials = material.get_recipe_raw_materials(updated_filtered_recipes, recipe_raw.results[1].name, recipe_raw.results[1].amount, true)
             local updated_recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, updated_recipe_raw_materials);
-            local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores -- TODO: Calculate this for originals, not originals based in randomized prerequisites.
+            local old_recipe_cost_scores = recipe_raw.original_recipe_cost_scores
     
             -- Adjust costs if they're not sufficiently close to the original.
             local loop_breaker = 0;
@@ -106,9 +106,11 @@ function F.balance_costs(data_raw)
             if updated_recipe_cost_scores.item > 0 and updated_recipe_cost_scores.fluid > 0 then
                 -- Too expensive.
                 loop_breaker = 0;
-                while ((updated_recipe_cost_scores.item / old_recipe_cost_scores.item) * (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid)) > acceptable_ratio  do
-                    -- TODO: Fix the log.
-                    util.logg(recipe_name .. " is too expensive " .. updated_recipe_cost_scores.item * updated_recipe_cost_scores.fluid .. " > " .. old_recipe_cost_scores.item * old_recipe_cost_scores.fluid)
+                local recipe_ratio = function (updated_recipe_cost_scores, old_recipe_cost_scores)
+                    return (updated_recipe_cost_scores.item / old_recipe_cost_scores.item) * (updated_recipe_cost_scores.fluid / old_recipe_cost_scores.fluid);
+                end
+                while (recipe_ratio(updated_recipe_cost_scores, old_recipe_cost_scores)) > acceptable_ratio  do
+                    util.logg(recipe_name .. " is too expensive " .. recipe_ratio(updated_recipe_cost_scores, old_recipe_cost_scores) .. " > " .. acceptable_ratio)
                     for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                         ingredient_raw.amount = math.floor(ingredient_raw.amount / acceptable_ratio) -- Always decrements by at least one.
                         if ingredient_raw.amount < 1 then
@@ -127,9 +129,11 @@ function F.balance_costs(data_raw)
                 end
                 -- Too cheap.
                 loop_breaker = 0;
-                while ((old_recipe_cost_scores.item / updated_recipe_cost_scores.item) * (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid)) > acceptable_ratio  do
-                    -- TODO: Fix the log.
-                    util.logg(recipe_name .. " is too cheap " .. updated_recipe_cost_scores.item * updated_recipe_cost_scores.fluid .. " < " .. old_recipe_cost_scores.item * old_recipe_cost_scores.fluid)
+                recipe_ratio = function (old_recipe_cost_scores, updated_recipe_cost_scores)
+                    return (old_recipe_cost_scores.item / updated_recipe_cost_scores.item) * (old_recipe_cost_scores.fluid / updated_recipe_cost_scores.fluid)
+                end
+                while (recipe_ratio(old_recipe_cost_scores, updated_recipe_cost_scores)) > acceptable_ratio  do
+                    util.logg(recipe_name .. " is too cheap " .. recipe_ratio(old_recipe_cost_scores, updated_recipe_cost_scores) .. " > " .. acceptable_ratio)
                     for ingredient_name, ingredient_raw in pairs(recipe_raw.ingredients) do
                         ingredient_raw.amount = math.ceil(ingredient_raw.amount * acceptable_ratio) -- Always increments by at least one.
                         if ingredient_raw.amount < 1 then
