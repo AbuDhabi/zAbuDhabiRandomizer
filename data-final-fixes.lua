@@ -22,9 +22,7 @@ for tech_name, technology in pairs(technologies) do
     local filtered_recipes_to_randomize = recipes.filter_out_non_randomizable_recipes(data_raw_working_copy, recipes_to_randomize, current_filtered_recipes);
 
     for recipe_name, recipe in pairs(filtered_recipes_to_randomize) do
-        if not data_raw_working_copy.recipe[recipe_name].modified then
-            recipes.annotate_with_original_cost_scores(data_raw_working_copy, recipe_name, filtered_recipes_unlocked, current_filtered_recipes)
-        end
+        recipes.annotate_with_original_cost_scores(data_raw_working_copy, recipe_name, filtered_recipes_unlocked, current_filtered_recipes)
     end
 end
 
