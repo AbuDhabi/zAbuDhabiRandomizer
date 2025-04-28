@@ -4,6 +4,7 @@ local recipes = require "scripts.recipes"
 local random = require "scripts.random"
 local material = require "scripts.raw_materials"
 local recipes_tests = require "scripts.recipes_tests"
+local balance = require "scripts.balance"
 
 random.seed(42)
 
@@ -46,7 +47,7 @@ for tech_name, technology in pairs(technologies) do
     end
 end
 
-recipes.balance_costs(data_raw_working_copy);
+balance.balance_costs(data_raw_working_copy);
 
 -- Assign new values to raws.
 data.raw = data_raw_working_copy;
