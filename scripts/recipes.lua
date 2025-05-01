@@ -165,7 +165,8 @@ function F.get_candidates_and_counts(data_raw, recipe_name, candidates_for_repla
     local item_candidates = {};
     local amount_of_item_candidates = 0;
     for candidate_name, candidate in pairs(candidates_for_replacements) do
-        if F.is_acceptable_type(data_raw, candidate_name, defines.types_of_items_and_fluid_for_ingredient_candidates) then
+        local candidate_recipe = data_raw.recipe[candidate_name] or {};
+        if F.is_acceptable_type(data_raw, candidate_name, defines.types_of_items_and_fluid_for_ingredient_candidates) and not util.array_contains_string(defines.categories_that_cannot_be_used_as_ingredients, candidate_recipe.category) then
             if data_raw.fluid[candidate_name] then
                 local is_forbidden_fluid = F.is_forbidden_fluid(data_raw, candidate_name, filtered_recipes);
                 if not is_forbidden_fluid then

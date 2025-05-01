@@ -76,4 +76,20 @@ function F.length(tbl)
     return length
 end
 
+---Determines if string is in array.
+---@param array table An array of strings.
+---@param input string 
+---@return boolean
+function F.array_contains_string(array, input)
+    if not input then
+        return false -- Can't work with nils.
+    end
+    for _, element in pairs(array) do
+        if input ==  element then
+            return true
+        end
+    end
+    return false;
+end
+
 return F

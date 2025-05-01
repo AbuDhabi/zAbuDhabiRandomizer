@@ -37,6 +37,10 @@ F.types_of_items_and_fluid_for_ingredient_candidates = {
     "item-with-entity-data"
 }
 
+F.categories_that_cannot_be_used_as_ingredients = {
+    "rocket-building"
+}
+
 F.maximum_item_amount = 65535
 
 return F;
