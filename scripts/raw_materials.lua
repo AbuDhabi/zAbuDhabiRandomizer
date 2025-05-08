@@ -1,3 +1,6 @@
+local defines = require "scripts.defines"
+local util = require "scripts.utilities"
+
 local F = {};
 
 ---Calculates raw material "costs", ie. sums of fluid and item raw materials.
@@ -68,8 +71,65 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
             return_value[item_or_fluid_name] = amount_demanded;
             return return_value -- The raw material itself.
         end
-        
     end
+end
+
+---Calculates the difference between the raw material amounts of recipes/items/fluids.
+---@param data_raw table Wube-provided raw data.
+---@param recipes table
+---@param original_ingredient string
+---@param candidate_ingredient string
+---@return number Result Difference between adjusted ingredient counts.
+function F.compare_raw_material_difference(data_raw, recipes, original_ingredient, candidate_ingredient)
+    local original_raw_materials = F.get_recipe_raw_materials(recipes, original_ingredient, 1, true);
+    local candidate_raw_materials = F.get_recipe_raw_materials(recipes, candidate_ingredient, 1, true);
+
+    local original_count = 0;
+    for raw_material_name, raw_material_amount in pairs(original_raw_materials) do
+        if data_raw.fluid[raw_material_name] then
+            original_count = original_count + (raw_material_amount / defines.fluid_to_item_ratio)
+        else
+            original_count = original_count + raw_material_amount
+        end
+    end
+    local candidate_count = 0;
+    for raw_material_name, raw_material_amount in pairs(candidate_raw_materials) do
+        if data_raw.fluid[raw_material_name] then
+            candidate_count = candidate_count + (raw_material_amount / defines.fluid_to_item_ratio)
+        else
+            candidate_count = candidate_count + raw_material_amount
+        end
+    end
+
+    if original_count > candidate_count then
+        return original_count - candidate_count
+    else
+        return candidate_count - original_count
+    end
+end
+
+---Gets the defined amount of best candidates.
+---@param data_raw table Wube-provided raw data.
+---@param recipes table Current filtered recipes.
+---@param candidates table string->bool
+---@param original_ingredient_name string
+---@return table
+function F.get_good_candidates(data_raw, recipes, candidates, original_ingredient_name)
+    local candidate_differences = {};
+    for candidate_name, _ in pairs(candidates) do
+        local difference = F.compare_raw_material_difference(data_raw, recipes, original_ingredient_name, candidate_name)
+        candidate_differences[candidate_name] = difference
+    end
+    local best_candidates = {};
+    for i=1,defines.number_of_good_candidates,1 do
+        local best_candidate = util.get_lowest_value_key(candidate_differences)
+        if best_candidate == nil then
+            return best_candidates
+        end
+        best_candidates[best_candidate] = true
+        candidate_differences[best_candidate] = nil
+    end
+    return best_candidates
 end
 
 return F;

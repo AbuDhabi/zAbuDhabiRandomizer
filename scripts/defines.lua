@@ -43,4 +43,13 @@ F.categories_that_cannot_be_used_as_ingredients = {
 
 F.maximum_item_amount = 65535
 
+--- Ie. how many fluid units are considered equivalent to one solid material item.
+F.fluid_to_item_ratio = 10;
+
+--- This is how many best candidates can be considered good.
+F.number_of_good_candidates = 5;
+
+--- Sometimes one needs a large number.
+F.a_sufficiently_large_number = 65535
+
 return F;

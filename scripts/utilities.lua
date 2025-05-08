@@ -1,3 +1,5 @@
+local defines = require "scripts.defines"
+
 local F = {};
 
 
@@ -90,6 +92,21 @@ function F.array_contains_string(array, input)
         end
     end
     return false;
+end
+
+---Gets the key with the lowest value.
+---@param tbl table string->number
+---@return string|nil 
+function F.get_lowest_value_key(tbl)
+    local lowest_key = nil;
+    local lowest_value = defines.a_sufficiently_large_number
+    for key, value in pairs(tbl) do
+        if value < lowest_value then
+            lowest_value = value
+            lowest_key = key
+        end
+    end
+    return lowest_key
 end
 
 return F

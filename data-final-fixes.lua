@@ -28,8 +28,6 @@ for tech_name, technology in pairs(technologies) do
 end
 
 -- TODO: Randomizing potentially obviates the need for planet-specific raws. Dunno what to do about that!
--- TODO: More appropriate recipes. Prebalancing. Try to pick ingredients that are roughly in line with the former raw materials cost in the given amount.
--- TODO: Exclude rocket parts from candidates for ingredients.
 
 -- Randomize recipes unlocked by tech.
 for tech_name, technology in pairs(technologies) do

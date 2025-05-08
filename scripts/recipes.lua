@@ -110,11 +110,13 @@ end
 function F.pick_new_ingredients(data_raw, raw_recipe, candidates_and_counts, filtered_recipes)
     for ingredient_index, ingredient in pairs(raw_recipe.ingredients) do
         if ingredient.type == "item" and candidates_and_counts.amount_of_item_candidates > candidates_and_counts.amount_of_item_ingredients then
-            local picked_item = random.pick_any_true(candidates_and_counts.item_candidates)
+            local good_candidates = material.get_good_candidates(data_raw, filtered_recipes, candidates_and_counts.item_candidates, ingredient.name)
+            local picked_item = random.pick_any_true(good_candidates)
             ingredient.name = picked_item
             candidates_and_counts.item_candidates[picked_item] = nil
         elseif ingredient.type == "fluid" and not F.is_forbidden_fluid(data_raw, ingredient.name, filtered_recipes) and candidates_and_counts.amount_of_fluid_candidates > candidates_and_counts.amount_of_fluid_ingredients then
-            local picked_fluid = random.pick_any_true(candidates_and_counts.fluid_candidates)
+            local good_candidates = material.get_good_candidates(data_raw, filtered_recipes, candidates_and_counts.fluid_candidates, ingredient.name)
+            local picked_fluid = random.pick_any_true(good_candidates)
             ingredient.name = picked_fluid
             candidates_and_counts.fluid_candidates[picked_fluid] = nil
         end
