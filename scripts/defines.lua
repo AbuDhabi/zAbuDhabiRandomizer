@@ -1,5 +1,7 @@
 local F = {};
 
+F.DEBUG = true
+
 -- Barreling and unbarreling should be ignored, because these recipes loop losslessly.
 F.ignored_recipe_subgroups = {
     ["fill-barrel"] = true,

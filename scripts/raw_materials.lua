@@ -81,25 +81,30 @@ end
 ---@param candidate_ingredient string
 ---@return number Result Difference between adjusted ingredient counts.
 function F.compare_raw_material_difference(data_raw, recipes, original_ingredient, candidate_ingredient)
-    local original_raw_materials = F.get_recipe_raw_materials(recipes, original_ingredient, 1, true);
-    local candidate_raw_materials = F.get_recipe_raw_materials(recipes, candidate_ingredient, 1, true);
+    -- Original costs should be considered for ingredients, because that's what we're balancing for.
+    local original_cost_scores = nil
+    if data_raw.recipe[original_ingredient] then
+        original_cost_scores = table.deepcopy(data_raw.recipe[original_ingredient].original_recipe_cost_scores)
+    end
+    if original_cost_scores then
+        if data_raw.recipe[original_ingredient].results[1].amount > 1 then
+            original_cost_scores.item = original_cost_scores.item / data_raw.recipe[original_ingredient].results[1].amount
+            original_cost_scores.fluid = original_cost_scores.fluid / data_raw.recipe[original_ingredient].results[1].amount
+        end
+    else
+        -- Sometimes the cost scores may be missing, eg. for raw materials themselves.
+        local original_raw_materials = F.get_recipe_raw_materials(recipes, original_ingredient, 1, true);
+        original_cost_scores = F.get_raw_material_costs(data_raw.item, data_raw.fluid, original_raw_materials);
+    end
+    original_cost_scores.fluid = original_cost_scores.fluid / defines.fluid_to_item_ratio
 
-    local original_count = 0;
-    for raw_material_name, raw_material_amount in pairs(original_raw_materials) do
-        if data_raw.fluid[raw_material_name] then
-            original_count = original_count + (raw_material_amount / defines.fluid_to_item_ratio)
-        else
-            original_count = original_count + raw_material_amount
-        end
-    end
-    local candidate_count = 0;
-    for raw_material_name, raw_material_amount in pairs(candidate_raw_materials) do
-        if data_raw.fluid[raw_material_name] then
-            candidate_count = candidate_count + (raw_material_amount / defines.fluid_to_item_ratio)
-        else
-            candidate_count = candidate_count + raw_material_amount
-        end
-    end
+    -- Candidates have to be calculated according to current knowledge.
+    local candidate_raw_materials = F.get_recipe_raw_materials(recipes, candidate_ingredient, 1, true);
+    local candidate_cost_scores = F.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
+    candidate_cost_scores.fluid = candidate_cost_scores.fluid / defines.fluid_to_item_ratio;
+
+    local original_count = original_cost_scores.item + original_cost_scores.fluid;
+    local candidate_count = candidate_cost_scores.item + candidate_cost_scores.fluid;
 
     if original_count > candidate_count then
         return original_count - candidate_count

@@ -2,8 +2,10 @@ local defines = require "scripts.defines"
 
 local F = {};
 
-
-function F.logg(input) 
+function F.logg(input)
+    if not defines.DEBUG then
+        return
+    end
     log(serpent.block(input))
 end
 
