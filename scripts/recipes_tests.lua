@@ -3,7 +3,7 @@ local utilities = require "scripts.utilities"
 
 local F = {};
 
-function F.raw_materials_are_accurate(recipes)
+function F.raw_materials_are_accurate(data_raw, recipes)
     local expected = {};
     local actual = {};
     local item = "";
@@ -12,7 +12,7 @@ function F.raw_materials_are_accurate(recipes)
     amount = 1;
     item = "copper-plate";
     expected = { ["copper-ore"] = 1 }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -22,7 +22,7 @@ function F.raw_materials_are_accurate(recipes)
     amount = 10;
     item = "copper-plate";
     expected = { ["copper-ore"] = 10 }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -32,7 +32,7 @@ function F.raw_materials_are_accurate(recipes)
     amount = 1;
     item = "copper-cable";
     expected = { ["copper-ore"] = 0.5 }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -42,7 +42,7 @@ function F.raw_materials_are_accurate(recipes)
     amount = 2;
     item = "copper-cable";
     expected = { ["copper-ore"] = 1 }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -67,7 +67,7 @@ function F.raw_materials_are_accurate(recipes)
         water = 5690,
         ["yumako-mash"] = 500
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -79,7 +79,7 @@ function F.raw_materials_are_accurate(recipes)
     expected = {
         ["iron-ore"] = 2
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -91,7 +91,7 @@ function F.raw_materials_are_accurate(recipes)
     expected = {
         ["iron-ore"] = 1.5
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -105,7 +105,7 @@ function F.raw_materials_are_accurate(recipes)
         ["pentapod-egg"] = 0.5,
         water = 30
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -119,7 +119,7 @@ function F.raw_materials_are_accurate(recipes)
         ["pentapod-egg"] = 1,
         ["yumako-mash"] = 3.75
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -133,7 +133,7 @@ function F.raw_materials_are_accurate(recipes)
         stone = 0.2,
         water = 2
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -151,7 +151,7 @@ function F.raw_materials_are_accurate(recipes)
         stone = 130,
         water = 1300
       }
-    actual = F.test_raw_material(recipes, item, amount)
+    actual = F.test_raw_material(data_raw, recipes, item, amount)
     if not utilities.equals(actual, expected, false) then
         utilities.logg("Raw materials test failed for " .. amount .. " " .. item)
         utilities.logg(actual)
@@ -159,8 +159,14 @@ function F.raw_materials_are_accurate(recipes)
     end
 end
 
-function F.test_raw_material(recipes, item_or_fluid_name, amount_demanded)
-    return material.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded, true)
+---Run unit test.
+---@param data_raw Wube-provided raw data.
+---@param recipes table
+---@param item_or_fluid_name string
+---@param amount_demanded number
+---@return table
+function F.test_raw_material(data_raw, recipes, item_or_fluid_name, amount_demanded)
+    return material.get_recipe_raw_materials(data_raw, recipes, item_or_fluid_name, amount_demanded, true)
 end
 
 return F;

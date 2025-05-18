@@ -3,6 +3,24 @@ local util = require "scripts.utilities"
 
 local F = {};
 
+---Finds a recipe for the named object.
+---@param recipes table
+---@param item_or_fluid_name string
+---@return table Recipes string->object
+function F.find_recipes_for_result(recipes, item_or_fluid_name)
+    local recipes_producing_this = {}
+    for _, recipe in pairs(recipes) do
+        if recipe.results then
+            for _, result in pairs(recipe.results) do
+                if result.name == item_or_fluid_name then
+                    recipes_producing_this[recipe.name] = recipe
+                end
+            end
+        end
+    end
+    return recipes_producing_this
+end
+
 ---Calculates raw material "costs", ie. sums of fluid and item raw materials.
 ---@param data_raw_item table Wube-provided data.raw.item
 ---@param data_raw_fluid table Wube-provided data.raw.fluid
@@ -20,12 +38,24 @@ function F.get_raw_material_costs(data_raw_item, data_raw_fluid, raw_materials)
     return scores
 end
 
+---@param data_raw table Wube-provided data.raw.
 ---@param recipes table
 ---@param item_or_fluid_name string
 ---@param amount_demanded number Integer
 ---@param top_level boolean True when calling from somewhere else, false when recursing within.
 ---@return any When top_level = true, then table. Otherwise table or string.
-function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded, top_level)
+function F.get_recipe_raw_materials(data_raw, recipes, item_or_fluid_name, amount_demanded, top_level)
+    -- Check whether it's a resource (ie. minable thing) as defined in game data.
+    if F.is_resource(data_raw, item_or_fluid_name) then
+        if not top_level then
+            return item_or_fluid_name; -- Found in recursion.
+        else
+            local return_value = {};
+            return_value[item_or_fluid_name] = amount_demanded;
+            return return_value -- The raw material itself.
+        end
+    end
+    -- It's not a defined resource, check recipes.
     local found_recipe = recipes[item_or_fluid_name] -- Naively try a recipe with the exact same name.
     if found_recipe then
         local found_raw_materials = {};
@@ -46,7 +76,7 @@ function F.get_recipe_raw_materials(recipes, item_or_fluid_name, amount_demanded
                 local already_counted = found_raw_materials[item_or_fluid_name] or 0
                 found_raw_materials[item_or_fluid_name] = already_counted + ingredient.amount
             else
-                local ingredient_raw_materials = F.get_recipe_raw_materials(recipes, ingredient.name, ingredient.amount, false)
+                local ingredient_raw_materials = F.get_recipe_raw_materials(data_raw, recipes, ingredient.name, ingredient.amount, false)
                 if type(ingredient_raw_materials) == "table" then
                     for raw_material_name, raw_material_amount in pairs(ingredient_raw_materials) do
                         local already_counted = found_raw_materials[raw_material_name] or 0
@@ -93,13 +123,13 @@ function F.compare_raw_material_difference(data_raw, recipes, original_ingredien
         end
     else
         -- Sometimes the cost scores may be missing, eg. for raw materials themselves.
-        local original_raw_materials = F.get_recipe_raw_materials(recipes, original_ingredient, 1, true);
+        local original_raw_materials = F.get_recipe_raw_materials(data_raw, recipes, original_ingredient, 1, true);
         original_cost_scores = F.get_raw_material_costs(data_raw.item, data_raw.fluid, original_raw_materials);
     end
     original_cost_scores.fluid = original_cost_scores.fluid / defines.fluid_to_item_ratio
 
     -- Candidates have to be calculated according to current knowledge.
-    local candidate_raw_materials = F.get_recipe_raw_materials(recipes, candidate_ingredient, 1, true);
+    local candidate_raw_materials = F.get_recipe_raw_materials(data_raw, recipes, candidate_ingredient, 1, true);
     local candidate_cost_scores = F.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
     candidate_cost_scores.fluid = candidate_cost_scores.fluid / defines.fluid_to_item_ratio;
 
@@ -135,6 +165,26 @@ function F.get_good_candidates(data_raw, recipes, candidates, original_ingredien
         candidate_differences[best_candidate] = nil
     end
     return best_candidates
+end
+
+---Checks if the named item or fluid is a resource
+---@param data_raw table Wube-provided raw data.
+---@param name string Item or fluid name.
+---@return boolean
+function F.is_resource(data_raw, name)
+    for resource_name, resource in pairs(data_raw.resource) do
+        if resource.minable and resource.minable.result == name then
+            return true;
+        end
+        if resource.minable and resource.minable.results then
+            for _, result in pairs(resource.minable.results) do
+                if result.name == name then
+                    return true;
+                end
+            end
+        end
+    end
+    return false;
 end
 
 return F;

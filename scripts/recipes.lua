@@ -25,24 +25,6 @@ function F.filter_out_ignored_recipes(data_raw_recipes)
     return filtered_recipes
 end
 
----Finds a recipe for the named object.
----@param recipes table
----@param item_or_fluid_name string
----@return table Recipes string->object
-function F.find_recipes_for_result(recipes, item_or_fluid_name)
-    local recipes_producing_this = {}
-    for _, recipe in pairs(recipes) do
-        if recipe.results then
-            for _, result in pairs(recipe.results) do
-                if result.name == item_or_fluid_name then
-                    recipes_producing_this[recipe.name] = recipe
-                end
-            end
-        end
-    end
-    return recipes_producing_this
-end
-
 ---Gets enabled recipes (ie. non-disabled).
 ---@param recipes table Recipes in Wube-provided data structures.
 ---@return table Recipes string->bool dictionary.
@@ -136,7 +118,7 @@ function F.is_forbidden_fluid(data_raw, fluid_name, filtered_recipes)
     end
     -- If it can be produced anywhere, it's also fine. 
     -- TODO: Check if its ancestors can all be made anywhere.
-    local production_recipes = F.find_recipes_for_result(filtered_recipes, fluid_name)
+    local production_recipes = material.find_recipes_for_result(filtered_recipes, fluid_name)
     local recipe_count = 0;
     local restriction_count = 0;
     for recipe_name, recipe in pairs(production_recipes) do
@@ -209,7 +191,7 @@ end
 ---@param filtered_recipes table
 function F.annotate_with_original_cost_scores(data_raw, recipe_name, available_recipes, filtered_recipes)
     local raw_recipe = data_raw.recipe[recipe_name]
-    local recipe_raw_materials = material.get_recipe_raw_materials(filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
+    local recipe_raw_materials = material.get_recipe_raw_materials(data_raw, filtered_recipes, raw_recipe.results[1].name, raw_recipe.results[1].amount, true)
     local recipe_cost_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, recipe_raw_materials);
     raw_recipe.original_raw_materials = recipe_raw_materials;
     raw_recipe.original_recipe_cost_scores = recipe_cost_scores;
@@ -240,7 +222,7 @@ function F.randomize_recipe(data_raw, recipe_name, available_recipes, filtered_r
     end
     local candidates_for_replacements = {};
     for candidate_name, candidate in pairs(available_results) do
-        local candidate_raw_materials = material.get_recipe_raw_materials(filtered_recipes, candidate_name, 1, true)
+        local candidate_raw_materials = material.get_recipe_raw_materials(data_raw, filtered_recipes, candidate_name, 1, true)
         local candidate_scores = material.get_raw_material_costs(data_raw.item, data_raw.fluid, candidate_raw_materials);
         -- Only items considered if they cost less than the total raw of the recipe to be randomized, in both fluids and items.
         if (candidate_scores.item < recipe_cost_scores.item or (candidate_scores.item == recipe_cost_scores.item and candidate_scores.item == 0)) and (candidate_scores.fluid < recipe_cost_scores.fluid or (candidate_scores.fluid == recipe_cost_scores.fluid and candidate_scores.fluid == 0)) then
@@ -309,7 +291,7 @@ function F.filter_out_non_randomizable_recipes(data_raw, recipes_to_randomize, c
             filtered_recipes_to_randomize[recipe_to_randomize_name] = nil
         end
         -- If a recipe is made solely from raw materials, don't randomize it.
-        local raw_materials = material.get_recipe_raw_materials(current_filtered_recipes, recipe_to_randomize_name, 1, true)
+        local raw_materials = material.get_recipe_raw_materials(data_raw, current_filtered_recipes, recipe_to_randomize_name, 1, true)
         local has_non_raw_ingredient = false;
         for _, ingredient in pairs(raw_recipe.ingredients) do
             if not raw_materials[ingredient.name] then
