@@ -1,4 +1,4 @@
-local util = require "scripts.utilities"
+local util = require "scripts.util"
 
 local F = {}
 

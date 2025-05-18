@@ -1,6 +1,6 @@
-local util = require "scripts.utilities"
+local util = require "scripts.util"
 local defines = require "scripts.defines"
-local material = require "scripts.raw_materials"
+local material = require "scripts.material"
 local recipe_module = require "scripts.recipes"
 
 local F = {};

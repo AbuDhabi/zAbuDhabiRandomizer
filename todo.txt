@@ -30,3 +30,26 @@
 --- nauvis -> inner planets is fine
 --- inner planets -> aquilo is fine, if possible
 --- RULE: If it (is barrelable) or (producible with (only items) or (barrelable fluids) w/o (surface conditions))
+
+
+Raw resource identification:
+ - subgroup = "raw-resource" identifies some basic resources from Nauvis, solid ones
+ - subgroup = "{planet}-processes" includes the rest of the solids, but also non-raw materials
+    - if it's here, maybe just check if there is a recipe, and if so, get rid of it
+
+There's data.raw.planet with a list of planets, maybe can infer ores from them?
+Patches and objects:
+    planet.{nauvis|fulgora|gleba|vulcanus|aquilo}.map_gen_settings.autoplace_settings.entity
+        entity is probably the top level in data.raw
+    planet.{nauvis|fulgora|gleba|vulcanus|aquilo}.map_gen_settings.autoplace_settings.tile.settings
+
+data.raw.autoplace-control has a list of raw resources, kind of
+    doesn't really define what items and fluids come from them
+
+data.raw.resource has another list, including other planetary solids
+    resource.calcite.minable.result is the raw solid resource (string)
+    resource.lithium-brine.minable.results.name is the fluid resource (string)
+
+data.raw.tile contains a list of tiles
+    data.raw.tile.water.fluid is probably a key in the data.raw.fluid list
+    yeah, changing this works!

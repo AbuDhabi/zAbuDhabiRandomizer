@@ -1,9 +1,9 @@
-local util = require "scripts.utilities"
+local util = require "scripts.util"
 local tech = require "scripts.technology"
 local recipes = require "scripts.recipes"
 local random = require "scripts.random"
-local material = require "scripts.raw_materials"
-local recipes_tests = require "scripts.recipes_tests"
+local material = require "scripts.material"
+local material_tests = require "scripts.material_tests"
 local balance = require "scripts.balance"
 
 random.seed(42)
@@ -29,6 +29,7 @@ end
 
 -- TODO: Randomizing potentially obviates the need for planet-specific raws. Dunno what to do about that!
 -- TODO: Get rid of hardcoded `results[1]` and similar.
+-- TODO: What is a raw material? Everything gatherable, via machine or not. Raw materials can also be produced. Asteroids - not raw materials, they're more like resource patches.
 
 -- Randomize recipes unlocked by tech.
 for tech_name, technology in pairs(technologies) do
@@ -57,4 +58,6 @@ if mods["quality"] then
 end
 
 -- Unit tests, uncomment to run.
-recipes_tests.raw_materials_are_accurate(original_filtered_recipes)
+material_tests.raw_materials_are_accurate(data_raw_working_copy, original_filtered_recipes)
+material_tests.resources_check_works(data_raw_working_copy);
+
